@@ -528,6 +528,25 @@ fn handle_ipc(
             }
             Value::Null
         }
+        "settings.get" => {
+            let st = state.borrow();
+            json!({
+                "closeAction": st.config.close.action,
+                "hotkeys": { "toggle": st.config.hotkeys.toggle, "panic": st.config.hotkeys.panic },
+                "theme": st.config.theme,
+            })
+        }
+        "settings.setCloseAction" => {
+            let action = req.pointer("/args/action").and_then(|v| v.as_str()).unwrap_or("ask").to_string();
+            if !matches!(action.as_str(), "ask" | "tray" | "exit") {
+                json!({ "ok": false })
+            } else {
+                let mut st = state.borrow_mut();
+                st.config.close.action = action.clone();
+                let _ = config::save_config_atomic(&st.config_path, &st.config);
+                json!({ "ok": true, "action": action })
+            }
+        }
         "app.close.decide" => {
             let action = req.pointer("/args/action").and_then(|v| v.as_str()).unwrap_or("tray").to_string();
             let remember = req.pointer("/args/remember").and_then(|v| v.as_bool()).unwrap_or(false);
@@ -773,15 +792,14 @@ fn main() -> wry::Result<()> {
                 let choice = tray::show_menu(hwnd);
                 let page = state_run.borrow().config.selected_page;
                 match choice {
-                    1 => { window.set_visible(true); window.set_focus(); }
-                    2 => { tasks_run.start_page(page); tasks_run.emit_now(); }
+                    1 => {
+                        window.set_visible(true);
+                        window.set_focus();
+                    }
                     3 => {
-                        if tasks_run.any_running() {
-                            tasks_run.stop_all();
-                        } else {
-                            tasks_run.start_all();
-                        }
-                        tasks_run.emit_now();
+                        window.set_visible(true);
+                        window.set_focus();
+                        respond(&holder_run, json!({ "event": "openSettings", "data": {} }));
                     }
                     4 => *control_flow = ControlFlow::Exit,
                     _ => {}

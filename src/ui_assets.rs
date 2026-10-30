@@ -16,6 +16,7 @@ pub static FILES: &[(&str, &[u8])] = &[
     ("js/views/about.js", include_bytes!("../../keyclicker-next/ui/js/views/about.js")),
     ("js/views/click-form.js", include_bytes!("../../keyclicker-next/ui/js/views/click-form.js")),
     ("js/views/sequence-editor.js", include_bytes!("../../keyclicker-next/ui/js/views/sequence-editor.js")),
+    ("js/views/settings.js", include_bytes!("../../keyclicker-next/ui/js/views/settings.js")),
     ("js/views/task-list.js", include_bytes!("../../keyclicker-next/ui/js/views/task-list.js")),
     ("js/views/timer-form.js", include_bytes!("../../keyclicker-next/ui/js/views/timer-form.js")),
     ("js/views/window-match.js", include_bytes!("../../keyclicker-next/ui/js/views/window-match.js")),

@@ -1,7 +1,6 @@
-import subprocess, json, os
+import subprocess, json
 OWNER, REPO = "PinkYunXi", "keyclicker-rs"
 TAG = "v0.9.0-alpha"
-COMMIT = "c5fdd55cfbc173d1fed52b8132607c5fe5255538"
 EXE = "D:/AITest/KeyClicker-RS/dist/keyclicker-rs.exe"
 
 def gh(args, stdin=None, ok_fail=False):
@@ -12,23 +11,20 @@ def gh(args, stdin=None, ok_fail=False):
         return None
     return r.stdout
 
-# 1. tag 指向最新提交
+head = json.loads(gh(["api", "repos/%s/%s/commits/main" % (OWNER, REPO)]))["sha"]
+print("head:", head)
 print("tag:", "ok" if gh(["api", "--method", "PATCH",
     "repos/%s/%s/git/refs/tags/%s" % (OWNER, REPO, TAG), "--input", "-"],
-    stdin=json.dumps({"sha": COMMIT, "force": True})) else "fail")
+    stdin=json.dumps({"sha": head, "force": True})) else "fail")
 
-# 2. 替换 release 资产
 rel = json.loads(gh(["api", "repos/%s/%s/releases/tags/%s" % (OWNER, REPO, TAG)]))
 rid = rel["id"]
 for a in rel["assets"]:
     gh(["api", "--method", "DELETE", "repos/%s/%s/releases/assets/%d" % (OWNER, REPO, a["id"])], ok_fail=True)
-    print("deleted asset:", a["name"])
+    print("deleted:", a["name"])
 up = gh(["api", "--method", "POST",
     "https://uploads.github.com/repos/%s/%s/releases/%d/assets?name=KeyClicker.exe" % (OWNER, REPO, rid),
     "-H", "Content-Type: application/octet-stream", "--input", EXE])
 if up:
     d = json.loads(up)
     print("uploaded:", d["name"], d["size"], "bytes")
-    print("url:", d["browser_download_url"])
-else:
-    print("upload failed")
