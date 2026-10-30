@@ -7,12 +7,16 @@ use windows::Win32::UI::Shell::{
     Shell_NotifyIconW, NIF_ICON, NIF_MESSAGE, NIF_TIP, NIM_ADD, NIM_DELETE, NOTIFYICONDATAW,
 };
 use windows::Win32::UI::WindowsAndMessaging::{CreateIconFromResourceEx, HICON, LR_DEFAULTCOLOR,
-    AppendMenuW, CreatePopupMenu, DestroyMenu, GetCursorPos, LoadIconW, SetForegroundWindow,
-    TrackPopupMenu, IDI_APPLICATION, MF_SEPARATOR, MF_STRING, TPM_RETURNCMD, TPM_RIGHTBUTTON,
+    AppendMenuW, CreatePopupMenu, DestroyMenu, GetCursorPos, LoadIconW, PostMessageW,
+    SetForegroundWindow, TrackPopupMenu, IDI_APPLICATION, MF_SEPARATOR, MF_STRING, TPM_RETURNCMD,
+    TPM_RIGHTBUTTON, WM_NULL,
 };
 
 pub const WM_APP_TRAY: u32 = 0x8000 + 2;
 const TRAY_ID: u32 = 1;
+
+/// 防止右键消息排队时重复弹出菜单
+static MENU_OPEN: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 
 fn hwnd_from(h: isize) -> HWND {
     HWND(h as *mut core::ffi::c_void)
@@ -76,19 +80,24 @@ pub fn remove(hwnd: isize) {
 
 /// 弹出托盘菜单，返回选中的命令 id（0 = 取消）
 pub fn show_menu(hwnd: isize) -> u16 {
-    unsafe {
+    use std::sync::atomic::Ordering;
+    // 消息可能排队多次触发，保证同一时间只弹一个菜单
+    if MENU_OPEN.swap(true, Ordering::SeqCst) {
+        return 0;
+    }
+    let result = unsafe {
         let Ok(menu) = CreatePopupMenu() else {
+            MENU_OPEN.store(false, Ordering::SeqCst);
             return 0;
         };
-        let _ = AppendMenuW(menu, MF_STRING, 1, w!("显示主窗口"));
-        let _ = AppendMenuW(menu, MF_SEPARATOR, 0, None);
-        let _ = AppendMenuW(menu, MF_STRING, 2, w!("启停当前配置"));
-        let _ = AppendMenuW(menu, MF_STRING, 3, w!("启停全部配置（F6）"));
+        let _ = AppendMenuW(menu, MF_STRING, 1, w!("显示主界面"));
         let _ = AppendMenuW(menu, MF_SEPARATOR, 0, None);
         let _ = AppendMenuW(menu, MF_STRING, 4, w!("退出"));
         let mut pt = POINT::default();
         let _ = GetCursorPos(&mut pt);
         let _ = SetForegroundWindow(hwnd_from(hwnd));
+        // MSDN：弹出托盘菜单前必须 PostMessage(WM_NULL)，否则点菜单外面收不掉
+        let _ = PostMessageW(Some(hwnd_from(hwnd)), WM_NULL, windows::Win32::Foundation::WPARAM(0), windows::Win32::Foundation::LPARAM(0));
         let cmd = TrackPopupMenu(
             menu,
             TPM_RETURNCMD | TPM_RIGHTBUTTON,
@@ -100,5 +109,7 @@ pub fn show_menu(hwnd: isize) -> u16 {
         );
         let _ = DestroyMenu(menu);
         cmd.0 as u16
-    }
+    };
+    MENU_OPEN.store(false, Ordering::SeqCst);
+    result
 }

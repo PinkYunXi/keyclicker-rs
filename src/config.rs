@@ -13,6 +13,7 @@ fn d_panic() -> String { "f6".into() }
 fn d_click() -> String { "click".into() }
 fn d_keys() -> String { "a".into() }
 fn d_version() -> i32 { 3 }
+fn d_close_action() -> String { "ask".into() }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct WindowFilter {
@@ -80,6 +81,19 @@ pub struct WindowState {
     pub always_on_top: bool,
 }
 
+/// 关闭窗口的行为：ask（首次询问）/ tray（最小化到托盘）/ exit（直接退出）
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct ClosePrefs {
+    #[serde(default = "d_close_action")]
+    pub action: String,
+}
+
+impl Default for ClosePrefs {
+    fn default() -> Self {
+        Self { action: d_close_action() }
+    }
+}
+
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Config {
     #[serde(default = "d_version")]
@@ -93,6 +107,8 @@ pub struct Config {
     #[serde(default, rename = "window")]
     pub window: WindowState,
     #[serde(default)]
+    pub close: ClosePrefs,
+    #[serde(default)]
     pub pages: Vec<Page>,
 }
 
@@ -101,6 +117,7 @@ impl Default for Config {
         Self {
             version: 3, theme: d_theme(), selected_page: 0,
             hotkeys: Hotkeys::default(), window: WindowState::default(),
+            close: ClosePrefs::default(),
             pages: vec![Page::default()],
         }
     }

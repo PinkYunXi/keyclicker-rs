@@ -11,7 +11,7 @@ use windows::Win32::UI::Input::KeyboardAndMouse::{
 use windows::Win32::UI::HiDpi::GetDpiForWindow;
 use windows::Win32::UI::WindowsAndMessaging::{
     CallWindowProcW, DefWindowProcW, SetWindowLongPtrW, GWLP_WNDPROC, MINMAXINFO, SC_MAXIMIZE,
-    WM_GETMINMAXINFO, WM_HOTKEY, WM_SYSCOMMAND, WNDPROC,
+    WM_GETMINMAXINFO, WM_HOTKEY, WM_LBUTTONDBLCLK, WM_LBUTTONUP, WM_RBUTTONUP, WM_SYSCOMMAND, WNDPROC,
 };
 
 /// 窗口最大尺寸（逻辑像素）：超过后可能出现排布异常，直接锁死上限
@@ -31,7 +31,16 @@ static TX: OnceLock<std::sync::mpsc::Sender<i32>> = OnceLock::new();
 unsafe extern "system" fn hotkey_proc(hwnd: HWND, msg: u32, wp: WPARAM, lp: LPARAM) -> LRESULT {
     if msg == crate::tray::WM_APP_TRAY {
         if let Some(tx) = TX.get() {
-            let _ = tx.send(-2);
+            // 只响应最终动作，避免 DOWN/UP 各弹一次菜单
+            match lp.0 as u32 {
+                WM_LBUTTONUP | WM_LBUTTONDBLCLK => {
+                    let _ = tx.send(-3);
+                }
+                WM_RBUTTONUP => {
+                    let _ = tx.send(-2);
+                }
+                _ => {}
+            }
         }
     }
     if msg == WM_HOTKEY {

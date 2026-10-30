@@ -1,4 +1,7 @@
 // KeyClicker Rust —— 主程序：窗口 + WebView2 宿主 + IPC 桥接 + 任务引擎
+// 使用 Windows GUI 子系统：双击 exe 不再弹出 cmd 控制台窗口
+#![windows_subsystem = "windows"]
+
 mod config;
 mod hook;
 mod hotkeys;
@@ -35,6 +38,8 @@ const CREATE_NO_WINDOW: u32 = 0x0800_0000;
 #[derive(Debug, Clone)]
 enum UserEvent {
     Drag,
+    HideToTray,
+    TrayShow,
     Minimize,
     Maximize,
     Close,
@@ -294,6 +299,7 @@ const SHIM: &str = r#"
 "#;
 
 fn dispatch_js(holder: &Rc<RefCell<Option<WebView>>>, raw: &str) {
+    log_ipc(&format!("dispatch: {}", &raw.chars().take(120).collect::<String>()));
     if let Some(wv) = holder.borrow().as_ref() {
         let js = format!("window.__kcWryBridge && window.__kcWryBridge.dispatch({raw})");
         if let Err(e) = wv.evaluate_script(&js) {
@@ -504,11 +510,38 @@ fn handle_ipc(
                     let _ = proxy.send_event(UserEvent::Maximize);
                 }
                 "close" => {
-                    let _ = proxy.send_event(UserEvent::Close);
+                    let action = state.borrow().config.close.action.clone();
+                    match action.as_str() {
+                        "exit" => {
+                            let _ = proxy.send_event(UserEvent::Close);
+                        }
+                        "tray" => {
+                            let _ = proxy.send_event(UserEvent::HideToTray);
+                        }
+                        _ => {
+                            // 首次关闭：让前端弹选择框
+                            respond(holder, json!({ "event": "closePrompt", "data": {} }));
+                        }
+                    }
                 }
                 _ => {}
             }
             Value::Null
+        }
+        "app.close.decide" => {
+            let action = req.pointer("/args/action").and_then(|v| v.as_str()).unwrap_or("tray").to_string();
+            let remember = req.pointer("/args/remember").and_then(|v| v.as_bool()).unwrap_or(false);
+            if remember {
+                let mut st = state.borrow_mut();
+                st.config.close.action = action.clone();
+                let _ = config::save_config_atomic(&st.config_path, &st.config);
+            }
+            if action == "exit" {
+                let _ = proxy.send_event(UserEvent::Close);
+            } else {
+                let _ = proxy.send_event(UserEvent::HideToTray);
+            }
+            json!({ "action": action })
         }
         "app.drag" | "app.dragStart" => {
             let _ = proxy.send_event(UserEvent::Drag);
@@ -626,7 +659,13 @@ fn main() -> wry::Result<()> {
     let proxy_hk = proxy.clone();
     thread::spawn(move || {
         for id in hk_rx {
-            let _ = proxy_hk.send_event(UserEvent::Hotkey(id));
+            let ev = match id {
+                // 托盘回调：-2 右键菜单，-3 左键显示窗口
+                -2 => UserEvent::Tray,
+                -3 => UserEvent::TrayShow,
+                other => UserEvent::Hotkey(other),
+            };
+            let _ = proxy_hk.send_event(ev);
         }
     });
     hotkeys::install(hwnd, hk_tx);
@@ -704,11 +743,29 @@ fn main() -> wry::Result<()> {
             Event::WindowEvent {
                 event: WindowEvent::CloseRequested,
                 ..
-            } => *control_flow = ControlFlow::Exit,
+            } => {
+                let action = state_run.borrow().config.close.action.clone();
+                log_ipc(&format!("close requested: action={action}"));
+                match action.as_str() {
+                    "exit" => *control_flow = ControlFlow::Exit,
+                    "tray" => {
+                        window.set_visible(false);
+                    }
+                    _ => {
+                        // 询问前端：最小化到托盘 还是 直接退出
+                        dispatch_js(&holder_run, &json!({ "event": "closePrompt", "data": {} }).to_string());
+                    }
+                }
+            }
             Event::UserEvent(UserEvent::Drag) => {
                 let _ = window.drag_window();
             }
             Event::UserEvent(UserEvent::Minimize) => window.set_minimized(true),
+            Event::UserEvent(UserEvent::HideToTray) => window.set_visible(false),
+            Event::UserEvent(UserEvent::TrayShow) => {
+                window.set_visible(true);
+                window.set_focus();
+            }
             Event::UserEvent(UserEvent::Maximize) => {
                 window.set_maximized(!window.is_maximized());
             }
