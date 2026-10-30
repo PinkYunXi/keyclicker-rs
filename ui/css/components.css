@@ -145,6 +145,24 @@
   background-color: #b02a1c;
 }
 
+/* 窗口刚重新显示时，短暂忽略标题栏按钮的 hover 样式 */
+body.is-just-shown .win-btn:hover {
+  background-color: transparent;
+}
+
+body.is-just-shown .win-btn:hover svg {
+  opacity: 0.9;
+}
+
+body.is-just-shown .win-btn-close:hover {
+  background-color: transparent;
+  color: var(--text-primary);
+}
+
+body.is-just-shown .tb-btn:hover {
+  background-color: transparent;
+}
+
 /* =============================================================================
    2. 页签栏（#pagebar 内部结构由 pages.js 生成）
    ========================================================================== */

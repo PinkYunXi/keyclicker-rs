@@ -136,8 +136,21 @@
     actions.appendChild(btn);
   }
 
+  /* 窗口重新显示 / 从托盘恢复时，鼠标往往还停在标题栏按钮上，
+     会让最小化高亮、关闭按钮保持危险色。这里在获得焦点的瞬间短暂抑制 hover。 */
+  var hoverGuardTimer = 0;
+  function guardHoverOnShow() {
+    document.body.classList.add('is-just-shown');
+    if (hoverGuardTimer) clearTimeout(hoverGuardTimer);
+    hoverGuardTimer = setTimeout(function () {
+      hoverGuardTimer = 0;
+      document.body.classList.remove('is-just-shown');
+    }, 450);
+  }
+
   /* ---- 初始化 ------------------------------------------------------------ */
   function init() {
+    window.addEventListener('focus', guardHoverOnShow);
     initWindowButtons();
     initThemeButton();
     initSettingsButton();
