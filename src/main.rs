@@ -549,7 +549,15 @@ fn handle_ipc(
                 "closeAction": st.config.close.action,
                 "hotkeys": { "toggle": st.config.hotkeys.toggle, "panic": st.config.hotkeys.panic },
                 "theme": st.config.theme,
+                "confirmDeletePage": st.config.confirm_delete_page,
             })
+        }
+        "settings.setConfirmDeletePage" => {
+            let on = req.pointer("/args/on").and_then(|v| v.as_bool()).unwrap_or(true);
+            let mut st = state.borrow_mut();
+            st.config.confirm_delete_page = on;
+            let _ = config::save_config_atomic(&st.config_path, &st.config);
+            json!({ "on": on })
         }
         "settings.setCloseAction" => {
             let action = req.pointer("/args/action").and_then(|v| v.as_str()).unwrap_or("ask").to_string();

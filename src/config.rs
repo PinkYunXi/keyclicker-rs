@@ -14,6 +14,7 @@ fn d_click() -> String { "click".into() }
 fn d_keys() -> String { "a".into() }
 fn d_version() -> i32 { 3 }
 fn d_close_action() -> String { "ask".into() }
+fn d_true() -> bool { true }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct WindowFilter {
@@ -108,6 +109,9 @@ pub struct Config {
     pub window: WindowState,
     #[serde(default)]
     pub close: ClosePrefs,
+    /// 删除配置页前是否弹确认框（可在设置里关闭）
+    #[serde(default = "d_true")]
+    pub confirm_delete_page: bool,
     #[serde(default)]
     pub pages: Vec<Page>,
 }
@@ -118,6 +122,7 @@ impl Default for Config {
             version: 3, theme: d_theme(), selected_page: 0,
             hotkeys: Hotkeys::default(), window: WindowState::default(),
             close: ClosePrefs::default(),
+            confirm_delete_page: true,
             pages: vec![Page::default()],
         }
     }
