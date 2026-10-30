@@ -32,7 +32,7 @@
 
 ## 使用
 
-1. 下载 `KeyClicker-0.9.0-beta-x64.exe`，双击运行（绿色单文件，配置写在 exe 同目录 `clicker_config.json`）
+1. 从 [Releases](https://github.com/PinkYunXi/keyclicker-rs/releases) 下载最新的 `KeyClicker-*-x64.exe`，双击运行（绿色单文件，配置写在 exe 同目录 `clicker_config.json`）
 2. 连点：填按键 → 设间隔 → 添加到任务列表 → 点 ▶ 开始
 3. 定时序列：「设置序列」录入按键 → 设分 / 秒 → 添加
 4. 需要只在某个窗口生效时，填窗口关键词（或点「抓取当前窗口」）并选择匹配方式
