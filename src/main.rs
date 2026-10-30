@@ -597,7 +597,7 @@ fn main() -> wry::Result<()> {
         let _ = SetCurrentProcessExplicitAppUserModelID(windows::core::w!("KeyClicker.Desktop"));
     }
     if !webview2_installed() {
-        // 不再内嵌微软的安装器二进制（闭源组件会影响开源许可证与免费签名资格）
+        // 不再内嵌微软的安装器二进制，保持单文件体积
         unsafe {
             let _ = windows::Win32::UI::WindowsAndMessaging::MessageBoxW(
                 None,
