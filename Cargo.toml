@@ -1,0 +1,33 @@
+[package]
+name = "keyclicker-rs"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+wry = { version = "0.57", features = ["devtools"] }
+tao = "0.37"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+regex = "1"
+png = "0.17"
+
+[dependencies.windows]
+version = "0.62"
+features = [
+  "Win32_Foundation",
+  "Win32_UI_WindowsAndMessaging",
+  "Win32_UI_Input_KeyboardAndMouse",
+  "Win32_System_Threading",
+  "Win32_System_LibraryLoader",
+  "Win32_System_Registry",
+  "Win32_Security",
+  "Win32_Graphics_Dwm",
+  "Win32_UI_Shell",
+]
+
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true
