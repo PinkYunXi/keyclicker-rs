@@ -58,13 +58,11 @@ cargo build --release
 
 `gen_ui_assets.py` 会把 `ui/` 目录下的界面资源内嵌进 exe；`build.bat` 可一键完成「生成资源 + 编译 + 部署」。
 
-## 代码签名 / SmartScreen
+## 未签名说明
 
-当前发布产物**未签名**，首次运行时 Windows 可能显示「已保护你的电脑」，点「更多信息 → 仍要运行」即可。
+当前发布产物尚未签名，首次运行时 Windows 可能提示「已保护你的电脑」，点「更多信息 → 仍要运行」即可。
 
-- 项目已申请开源免费的 **SignPath Foundation** 签名（GitHub Actions 已就绪，审核通过后自动签名），细节见 [docs/CODE_SIGNING.md](docs/CODE_SIGNING.md)
-- **自签名证书无效**，不能消除该提示
-- 免费证书初期仍可能提示，需要累积下载量
+Windows 版本计划由 [SignPath Foundation](https://signpath.org/) 提供开源项目代码签名。
 
 ## 已知限制
 
