@@ -13,16 +13,16 @@
 
 - 仓库：https://github.com/PinkYunXi/keyclicker-rs
 - 许可证：MIT（OSI 认可，SignPath 要求之一）
-- 已发布 Release：v0.9.0-beta 及 `KeyClicker.exe` 资产
-- 构建产物：单文件 `keyclicker-rs.exe`（约 4 MB），无安装器
+- 已发布 Release：v0.9.0-beta 及 `KeyClicker-0.9.0-beta-x64.exe` 资产
+- 构建产物：单文件 exe（约 2 MB），无安装器
 
 满足 SignPath Foundation 的基本条件（公开开源项目 + 可复现构建 + Release 资产）。
 
 ## 申请步骤（需要项目所有者本人操作）
 
-1. 打开 https://signpath.io/ ，用 **GitHub 账号登录**。
-2. 在控制台选择 **"Apply for free open source signing"**（SignPath Foundation）。
-3. 填写项目信息：
+1. 打开 **https://signpath.org/apply** 填写申请表单（提交申请本身不需要账号）。
+2. 表单需要填写：项目名、仓库地址、许可证、构建系统、项目简介与维护者信息。
+3. 参考填写内容：
    - Repository：`https://github.com/PinkYunXi/keyclicker-rs`
    - License：MIT
    - 构建方式：GitHub Actions（仓库内已有 `.github/workflows/build.yml`）
