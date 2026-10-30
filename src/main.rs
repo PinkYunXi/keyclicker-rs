@@ -350,8 +350,19 @@ fn handle_ipc(
             let mut st = state.borrow_mut();
             if let Some(cfg_val) = req.pointer("/args/config") {
                 if let Ok(text) = serde_json::to_string(cfg_val) {
-                    if let Ok(cfg) = config::Config::from_json(&text) {
-                        st.config = cfg;
+                    if let Ok(incoming) = config::Config::from_json(&text) {
+                        // 前端只负责主题 / 页面 / 选中页。
+                        // 热键、关闭行为、删除确认等设置项由设置面板单独写盘，
+                        // 不能被 UI 的旧快照整体覆盖（否则会出现「设置有时候没保存」）。
+                        st.config.theme = incoming.theme;
+                        st.config.pages = incoming.pages;
+                        let sel = cfg_val
+                            .get("selectedPage")
+                            .or_else(|| cfg_val.get("selected_page"))
+                            .and_then(|v| v.as_u64());
+                        if let Some(v) = sel {
+                            st.config.selected_page = v as usize;
+                        }
                         if let Err(e) = config::save_config_atomic(&st.config_path, &st.config) {
                             log_ipc(&format!("save error: {e}"));
                         }
