@@ -2,6 +2,8 @@
 
 Windows 键盘连点 / 定时按键工具，用 **Rust + WebView2** 重写（旧版为 Python + PyQt6）。
 
+> Windows 发布版已申请 **[SignPath Foundation](https://signpath.org/)** 提供的开源项目免费代码签名（Open Source Code Signing）。
+
 - **单文件 exe**（约 2 MB，UI 资源全部内嵌，无外部依赖、无专有二进制组件）
 - 深/浅色 Fluent 界面，无边框圆角窗口
 - 连点间隔下限 16 ms（约 60 次/秒）
