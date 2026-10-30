@@ -40,7 +40,7 @@ if r.returncode == 0:
 print("existing readme sha:", sha_existing)
 
 b64 = base64.b64encode(open(os.path.join(ROOT, first), "rb").read()).decode()
-payload = {"message": "KeyClicker 0.9.0-alpha: initial import", "content": b64}
+payload = {"message": "KeyClicker 0.9.0-beta: initial import", "content": b64}
 branch = "main"
 if sha_existing:
     payload["sha"] = sha_existing
@@ -71,7 +71,7 @@ tree_sha = json.loads(gh(["api", "--method", "POST",
                          stdin=json.dumps({"tree": tree})))["sha"]
 commit_sha = json.loads(gh(["api", "--method", "POST",
                             "repos/%s/%s/git/commits" % (OWNER, REPO), "--input", "-"],
-                           stdin=json.dumps({"message": "KeyClicker 0.9.0-alpha: Rust + WebView2 rewrite",
+                           stdin=json.dumps({"message": "KeyClicker 0.9.0-beta: Rust + WebView2 rewrite",
                                              "tree": tree_sha, "parents": [base_commit]})))["sha"]
 gh(["api", "--method", "PATCH", "repos/%s/%s/git/refs/heads/%s" % (OWNER, REPO, branch),
     "--input", "-"], stdin=json.dumps({"sha": commit_sha, "force": True}))

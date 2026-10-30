@@ -1,6 +1,6 @@
 import subprocess, json
 OWNER, REPO = "PinkYunXi", "keyclicker-rs"
-TAG = "v0.9.0-alpha"
+TAG = "v0.9.0-beta"
 EXE = "D:/AITest/KeyClicker-RS/dist/keyclicker-rs.exe"
 
 def gh(args, stdin=None, ok_fail=False):

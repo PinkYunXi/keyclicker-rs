@@ -824,7 +824,6 @@ fn main() -> wry::Result<()> {
             }
             Event::UserEvent(UserEvent::Tray) => {
                 let choice = tray::show_menu(hwnd);
-                let page = state_run.borrow().config.selected_page;
                 match choice {
                     1 => {
                         window.set_visible(true);

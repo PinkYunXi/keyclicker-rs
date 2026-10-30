@@ -1,7 +1,7 @@
 import subprocess, json, sys, os
 
 OWNER, REPO = "PinkYunXi", "keyclicker-rs"
-TAG = "v0.9.0-alpha"
+TAG = "v0.9.0-beta"
 COMMIT = "d6221b7ab1140151fd5b947942757ff6783df0fc"
 EXE = "D:/AITest/KeyClicker-RS/dist/keyclicker-rs.exe"
 
@@ -20,7 +20,7 @@ if out is None:
              stdin=json.dumps({"sha": COMMIT, "force": True}))
 print("tag:", "ok" if out else "fail")
 
-body = """## KeyClicker 0.9.0-alpha
+body = """## KeyClicker 0.9.0-beta
 
 参考 KeyClicker 1.2.4 重写的键盘连点器，Rust + WebView2 实现，单文件绿色版，无 PyQt6 的 GPL 授权问题。
 
@@ -42,7 +42,7 @@ KeyClicker.exe：单文件，双击即用。已内嵌 WebView2 安装器，Win10
 - Windows 10 1809+ / Windows 11（x64）
 - WebView2 Runtime（Win11 自带；Win10 缺失时首次启动提示安装）
 
-### 已知限制（alpha）
+### 已知限制（beta）
 - 仅 x64，未签名，SmartScreen 可能提示
 - 部分全屏独占游戏内注入可能被反作弊拦截
 - 高 DPI 多显示器混合缩放下布局可能需手动调整窗口大小
@@ -50,7 +50,7 @@ KeyClicker.exe：单文件，双击即用。已内嵌 WebView2 安装器，Win10
 构建方式见 README.md。"""
 
 rel = gh(["api", "--method", "POST", "repos/%s/%s/releases" % (OWNER, REPO), "--input", "-"],
-         stdin=json.dumps({"tag_name": TAG, "name": "KeyClicker 0.9.0-alpha",
+         stdin=json.dumps({"tag_name": TAG, "name": "KeyClicker 0.9.0-beta",
                            "body": body, "draft": False, "prerelease": True}))
 if rel is None:
     rel = gh(["api", "repos/%s/%s/releases/tags/%s" % (OWNER, REPO, TAG)])

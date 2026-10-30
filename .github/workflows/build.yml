@@ -1,0 +1,69 @@
+name: build
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 安装 Rust（MSVC）
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - name: 缓存 cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: cargo-${{ hashFiles('Cargo.lock') }}
+
+      - name: 生成内嵌 UI 资源
+        run: python tools/gen_ui_assets.py
+
+      - name: 编译 release
+        run: cargo build --release
+
+      - name: 验证产物
+        run: |
+          Get-Item target/release/keyclicker-rs.exe | Select-Object Name, Length
+          python -c "import struct;d=open('target/release/keyclicker-rs.exe','rb').read();e=struct.unpack_from('<I',d,0x3C)[0];print('subsystem',struct.unpack_from('<H',d,e+24+68)[0])"
+
+      # ── 代码签名（SignPath 开源计划审核通过后再启用）────────────────
+      # 需要在该仓库 Settings → Secrets 里配置：
+      #   SIGNPATH_API_TOKEN、SIGNPATH_ORGANIZATION_ID
+      # 并在 SignPath 控制台创建对应的 project / signing policy（slug 见下方）。
+      #
+      # - name: 签名 exe
+      #   uses: signpath/github-action-submit-signing-request@v1
+      #   with:
+      #     api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+      #     organization-id: ${{ secrets.SIGNPATH_ORGANIZATION_ID }}
+      #     project-slug: keyclicker-rs
+      #     signing-policy-slug: release-signing
+      #     artifact-configuration-slug: exe
+      #     github-artifact-id: ${{ steps.upload.outputs.artifact-id }}
+      #     wait-for-completion: true
+      #     output-artifact-directory: signed
+      # ────────────────────────────────────────────────────────────
+
+      - name: 上传构建产物
+        id: upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: KeyClicker-unsigned
+          path: target/release/keyclicker-rs.exe
+
+      - name: 上传到 Release（打 tag 时）
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: target/release/keyclicker-rs.exe
+          prerelease: true
