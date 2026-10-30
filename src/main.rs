@@ -10,6 +10,7 @@ mod ui_assets;
 mod winmatch;
 
 use std::cell::RefCell;
+use std::os::windows::process::CommandExt;
 use std::io::{Read, Write};
 use std::net::TcpListener;
 use std::path::PathBuf;
@@ -27,6 +28,9 @@ use tao::event_loop::{ControlFlow, EventLoopBuilder, EventLoopProxy};
 use tao::platform::windows::WindowExtWindows;
 use tao::window::WindowBuilder;
 use wry::{WebView, WebViewBuilder, WebViewBuilderExtWindows};
+
+/// 子进程不创建控制台窗口（否则 reg.exe 会闪黑窗）
+const CREATE_NO_WINDOW: u32 = 0x0800_0000;
 
 #[derive(Debug, Clone)]
 enum UserEvent {
@@ -82,6 +86,7 @@ fn ensure_single_instance() -> bool {
 fn system_theme() -> String {
     let out = std::process::Command::new("reg")
         .args(["query", r"HKCU\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize", "/v", "AppsUseLightTheme"])
+        .creation_flags(CREATE_NO_WINDOW)
         .output();
     if let Ok(out) = out {
         let text = String::from_utf8_lossy(&out.stdout);
@@ -100,6 +105,7 @@ fn resolve_theme(theme: &str) -> String {
 fn is_windows_11() -> bool {
     let out = std::process::Command::new("reg")
         .args(["query", r"HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion", "/v", "CurrentBuildNumber"])
+        .creation_flags(CREATE_NO_WINDOW)
         .output();
     if let Ok(out) = out {
         let text = String::from_utf8_lossy(&out.stdout);
@@ -148,6 +154,7 @@ fn install_webview2() -> bool {
     }
     let ok = std::process::Command::new(&path)
         .args(["/silent", "/install"])
+        .creation_flags(CREATE_NO_WINDOW)
         .status()
         .map(|st| st.success())
         .unwrap_or(false);
@@ -555,8 +562,8 @@ fn main() -> wry::Result<()> {
         .with_window_icon(load_window_icon())
         .with_title("KeyClicker")
         .with_decorations(false)
-        .with_min_inner_size(tao::dpi::LogicalSize::new(860.0, 560.0))
-        .with_inner_size(tao::dpi::LogicalSize::new(1080.0, 720.0))
+        .with_min_inner_size(tao::dpi::LogicalSize::new(720.0, 520.0))
+        .with_inner_size(tao::dpi::LogicalSize::new(900.0, 640.0))
         .build(&event_loop)
         .expect("create window");
     let hwnd = window.hwnd() as isize;
@@ -710,11 +717,10 @@ fn main() -> wry::Result<()> {
                     1 => { window.set_visible(true); window.set_focus(); }
                     2 => { tasks_run.start_page(page); tasks_run.emit_now(); }
                     3 => {
-                        if tasks_run.pause_all_running() {
-                            toast(&holder_run, "warn", "已暂停全部任务（F6）");
+                        if tasks_run.any_running() {
+                            tasks_run.stop_all();
                         } else {
-                            tasks_run.resume_all_paused();
-                            toast(&holder_run, "info", "已恢复全部任务（F6）");
+                            tasks_run.start_all();
                         }
                         tasks_run.emit_now();
                     }
@@ -773,18 +779,20 @@ fn main() -> wry::Result<()> {
                     };
                     if running {
                         tasks_run.stop_page(page);
-                        toast(&holder_run, "info", "已停止当前页全部任务");
+                        toast(&holder_run, "info", "已停止当前配置的全部任务");
                     } else {
                         tasks_run.start_page(page);
-                        toast(&holder_run, "info", "已开始当前页全部任务");
+                        toast(&holder_run, "info", "已开始当前配置的全部任务");
                     }
                     tasks_run.emit_now();
                 } else if hk == hotkeys::ID_PANIC {
-                    if tasks_run.pause_all_running() {
-                        toast(&holder_run, "warn", "已暂停全部任务（F6）");
+                    // F6：启停全部配置页的全部任务
+                    if tasks_run.any_running() {
+                        tasks_run.stop_all();
+                        toast(&holder_run, "info", "已停止全部任务（F6）");
                     } else {
-                        tasks_run.resume_all_paused();
-                        toast(&holder_run, "info", "已恢复全部任务（F6）");
+                        tasks_run.start_all();
+                        toast(&holder_run, "info", "已开始全部任务（F6）");
                     }
                     tasks_run.emit_now();
                 }

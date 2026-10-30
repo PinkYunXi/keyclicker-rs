@@ -195,6 +195,25 @@ impl TaskManager {
         }
     }
 
+    pub fn start_all(&self) {
+        let ids: Vec<String> = {
+            let g = self.inner.lock().unwrap();
+            g.entries
+                .iter()
+                .filter(|e| e.state == TaskState::Idle)
+                .map(|e| e.id.clone())
+                .collect()
+        };
+        for id in ids {
+            self.start(&id);
+        }
+    }
+
+    pub fn any_running(&self) -> bool {
+        let g = self.inner.lock().unwrap();
+        g.entries.iter().any(|e| e.state == TaskState::Running)
+    }
+
     pub fn stop_all(&self) {
         let ids: Vec<String> = {
             let g = self.inner.lock().unwrap();

@@ -82,8 +82,8 @@ pub fn show_menu(hwnd: isize) -> u16 {
         };
         let _ = AppendMenuW(menu, MF_STRING, 1, w!("显示主窗口"));
         let _ = AppendMenuW(menu, MF_SEPARATOR, 0, None);
-        let _ = AppendMenuW(menu, MF_STRING, 2, w!("开始当前页"));
-        let _ = AppendMenuW(menu, MF_STRING, 3, w!("暂停/恢复全部（F6）"));
+        let _ = AppendMenuW(menu, MF_STRING, 2, w!("启停当前配置"));
+        let _ = AppendMenuW(menu, MF_STRING, 3, w!("启停全部配置（F6）"));
         let _ = AppendMenuW(menu, MF_SEPARATOR, 0, None);
         let _ = AppendMenuW(menu, MF_STRING, 4, w!("退出"));
         let mut pt = POINT::default();
