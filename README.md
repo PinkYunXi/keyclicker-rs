@@ -52,6 +52,14 @@ cargo build --release
 
 发布版会先运行 `tools/gen_ui_assets.py` 把 `ui/` 内嵌进 exe，再由 `build.bat` 一键编译并部署。
 
+## 代码签名 / SmartScreen
+
+当前发布产物**未签名**，首次运行可能出现「Windows 已保护你的电脑」，点「更多信息 → 仍要运行」即可。
+
+- 项目已接入开源免费的 **SignPath Foundation** 签名流程（GitHub Actions 已就绪，审核通过后取消注释即可自动签名）：见 [docs/CODE_SIGNING.md](docs/CODE_SIGNING.md)
+- **自签名证书无效**，不会消除 SmartScreen 提示，请勿使用
+- 免费 OV 证书初期仍可能提示，需要累积下载量；EV 证书才能近乎即时建立信誉
+
 ## 已知限制（alpha）
 
 - 需以不低于目标程序的权限运行（向管理员程序发键需右键以管理员运行）
