@@ -781,7 +781,13 @@ fn main() -> wry::Result<()> {
                 match action.as_str() {
                     "exit" => *control_flow = ControlFlow::Exit,
                     "tray" => {
+                        // 与 HideToTray 一致：先结束录制，避免低级键盘钩子继续吞键
+                        if recording_run.borrow_mut().take().is_some() {
+                            hook::set_recording(false);
+                            log_ipc("recording cancelled: closed to tray");
+                        }
                         window.set_visible(false);
+                        log_ipc("window closed to tray");
                     }
                     _ => {
                         // 询问前端：最小化到托盘 还是 直接退出
