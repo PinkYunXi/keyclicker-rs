@@ -1073,7 +1073,7 @@ dependencies = [
 
 [[package]]
 name = "keyclicker-rs"
-version = "0.9.0-beta"
+version = "0.9.1-beta"
 dependencies = [
  "png",
  "regex",

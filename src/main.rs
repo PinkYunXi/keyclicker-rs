@@ -729,7 +729,15 @@ fn main() -> wry::Result<()> {
     let recording_ipc = recording.clone();
     let proxy_ipc = proxy.clone();
 
-    let webview = WebViewBuilder::new()
+    // WebView2 的用户数据目录放到系统缓存，避免在 exe 旁边生成 xxx.exe.WebView2 文件夹，
+    // 保持「exe + 配置文件」的绿色便携形态
+    // 放系统临时目录：不污染 exe 所在目录，也不会在用户目录留下缓存
+    let webview_data = std::env::temp_dir().join("KeyClicker-WebView2");
+    let _ = std::fs::create_dir_all(&webview_data);
+    log_ipc(&format!("webview data: {}", webview_data.display()));
+
+    let mut web_context = wry::WebContext::new(Some(webview_data.clone()));
+    let webview = WebViewBuilder::new_with_web_context(&mut web_context)
         .with_url(&url)
         .with_devtools(true)
         .with_browser_accelerator_keys(false)
