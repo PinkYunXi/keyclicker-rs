@@ -39,24 +39,6 @@ jobs:
           Get-Item target/release/keyclicker-rs.exe | Select-Object Name, Length
           python -c "import struct;d=open('target/release/keyclicker-rs.exe','rb').read();e=struct.unpack_from('<I',d,0x3C)[0];print('subsystem',struct.unpack_from('<H',d,e+24+68)[0])"
 
-      # ── 代码签名（SignPath 开源计划审核通过后再启用）────────────────
-      # 需要在该仓库 Settings → Secrets 里配置：
-      #   SIGNPATH_API_TOKEN、SIGNPATH_ORGANIZATION_ID
-      # 并在 SignPath 控制台创建对应的 project / signing policy（slug 见下方）。
-      #
-      # - name: 签名 exe
-      #   uses: signpath/github-action-submit-signing-request@v1
-      #   with:
-      #     api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
-      #     organization-id: ${{ secrets.SIGNPATH_ORGANIZATION_ID }}
-      #     project-slug: keyclicker-rs
-      #     signing-policy-slug: release-signing
-      #     artifact-configuration-slug: exe
-      #     github-artifact-id: ${{ steps.upload.outputs.artifact-id }}
-      #     wait-for-completion: true
-      #     output-artifact-directory: signed
-      # ────────────────────────────────────────────────────────────
-
       - name: 生成带版本号的产物名
         id: rename
         shell: pwsh
