@@ -382,7 +382,7 @@ fn handle_ipc(
                 }
             }
             let (ok1, ok2) = hotkeys::re_register(st.hwnd, &st.config.hotkeys.toggle, &st.config.hotkeys.panic);
-            log_ipc(&format!("hotkeys toggle={ok1} panic={ok2}"));
+            log_ipc(&format!("hotkeys re-register toggle={ok1} panic={ok2} ({})", st.config.hotkeys.toggle));
             let _ = config::save_config_atomic(&st.config_path, &st.config);
             json!({ "toggle": st.config.hotkeys.toggle, "panic": st.config.hotkeys.panic })
         }
@@ -856,6 +856,7 @@ fn main() -> wry::Result<()> {
                 respond(&holder_run, json!({ "event": "window.grabResult", "data": v }));
             }
             Event::UserEvent(UserEvent::Hotkey(hk)) => {
+                log_ipc(&format!("hotkey fired id={hk}"));
                 let page = state_run.borrow().config.selected_page;
                 if hk == hotkeys::ID_TOGGLE {
                     let running = {

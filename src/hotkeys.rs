@@ -1,5 +1,5 @@
 // 全局热键：RegisterHotKey + 子类化窗口过程拦截 WM_HOTKEY
-use std::sync::atomic::{AtomicIsize, Ordering};
+use std::sync::atomic::{AtomicI32, AtomicIsize, AtomicU64, Ordering};
 use std::sync::OnceLock;
 
 use windows::Win32::Foundation::{HWND, LPARAM, LRESULT, POINT, WPARAM};
@@ -23,6 +23,19 @@ pub const ID_PANIC: i32 = 102;
 
 static ORIG: AtomicIsize = AtomicIsize::new(0);
 
+/// 长按热键会产生连续的 WM_HOTKEY（MOD_NOREPEAT 在部分键盘/组合下不生效），
+/// 这里做 350ms 去抖，避免「开始/停止」被连点成 toggle 抖动。
+static LAST_FIRE_MS: AtomicU64 = AtomicU64::new(0);
+static LAST_FIRE_ID: AtomicI32 = AtomicI32::new(0);
+const HOTKEY_DEBOUNCE_MS: u64 = 350;
+
+fn now_ms() -> u64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_millis() as u64)
+        .unwrap_or(0)
+}
+
 fn hwnd_from(h: isize) -> HWND {
     HWND(h as *mut c_void)
 }
@@ -44,8 +57,16 @@ unsafe extern "system" fn hotkey_proc(hwnd: HWND, msg: u32, wp: WPARAM, lp: LPAR
         }
     }
     if msg == WM_HOTKEY {
-        if let Some(tx) = TX.get() {
-            let _ = tx.send(wp.0 as i32);
+        let id = wp.0 as i32;
+        let now = now_ms();
+        let last = LAST_FIRE_MS.load(Ordering::Relaxed);
+        let last_id = LAST_FIRE_ID.load(Ordering::Relaxed);
+        if !(id == last_id && now.saturating_sub(last) < HOTKEY_DEBOUNCE_MS) {
+            LAST_FIRE_MS.store(now, Ordering::Relaxed);
+            LAST_FIRE_ID.store(id, Ordering::Relaxed);
+            if let Some(tx) = TX.get() {
+                let _ = tx.send(id);
+            }
         }
     }
     // 禁用最大化：系统菜单 / 双击标题栏 / Win+↑ 都会被这里挡掉
