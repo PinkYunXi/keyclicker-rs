@@ -150,23 +150,6 @@ fn webview2_installed() -> bool {
     false
 }
 
-/// 从内嵌的 Evergreen bootstrapper 静默安装 WebView2
-fn install_webview2() -> bool {
-    let bytes: &[u8] = include_bytes!("../assets/MicrosoftEdgeWebview2Setup.exe");
-    let path = std::env::temp_dir().join("MicrosoftEdgeWebview2Setup.exe");
-    if std::fs::write(&path, bytes).is_err() {
-        return false;
-    }
-    let ok = std::process::Command::new(&path)
-        .args(["/silent", "/install"])
-        .creation_flags(CREATE_NO_WINDOW)
-        .status()
-        .map(|st| st.success())
-        .unwrap_or(false);
-    let _ = std::fs::remove_file(&path);
-    ok
-}
-
 /// 从内嵌 ICO 取 32x32 PNG 解码成窗口/任务栏图标
 fn load_window_icon() -> Option<tao::window::Icon> {
     let bytes: &[u8] = include_bytes!("../assets/keyclicker.ico");
@@ -614,28 +597,16 @@ fn main() -> wry::Result<()> {
         let _ = SetCurrentProcessExplicitAppUserModelID(windows::core::w!("KeyClicker.Desktop"));
     }
     if !webview2_installed() {
-        let proceed = unsafe {
-            windows::Win32::UI::WindowsAndMessaging::MessageBoxW(
+        // 不再内嵌微软的安装器二进制（闭源组件会影响开源许可证与免费签名资格）
+        unsafe {
+            let _ = windows::Win32::UI::WindowsAndMessaging::MessageBoxW(
                 None,
-                windows::core::w!("检测到未安装 Microsoft Edge WebView2 运行时（Windows 10 需要单独安装）。\n\n点击“确定”将自动安装（需要联网，约 1 分钟）。"),
+                windows::core::w!("未检测到 Microsoft Edge WebView2 运行时。\n\nWindows 11 通常已自带；Windows 10 需要安装一次。\n\n点击「确定」将打开微软官方下载页，安装完成后重新打开本程序即可。"),
                 windows::core::w!("KeyClicker"),
-                windows::Win32::UI::WindowsAndMessaging::MB_OKCANCEL | windows::Win32::UI::WindowsAndMessaging::MB_ICONINFORMATION,
-            )
-        };
-        if proceed == windows::Win32::UI::WindowsAndMessaging::IDOK {
-            if install_webview2() && webview2_installed() {
-                unsafe {
-                    let _ = windows::Win32::UI::WindowsAndMessaging::MessageBoxW(
-                        None,
-                        windows::core::w!("WebView2 运行时安装完成，请重新打开 KeyClicker。"),
-                        windows::core::w!("KeyClicker"),
-                        windows::Win32::UI::WindowsAndMessaging::MB_OK | windows::Win32::UI::WindowsAndMessaging::MB_ICONINFORMATION,
-                    );
-                }
-            } else {
-                open_url("https://go.microsoft.com/fwlink/p/?LinkId=2124703");
-            }
+                windows::Win32::UI::WindowsAndMessaging::MB_OK | windows::Win32::UI::WindowsAndMessaging::MB_ICONINFORMATION,
+            );
         }
+        open_url("https://go.microsoft.com/fwlink/p/?LinkId=2124703");
         return Ok(());
     }
     if !ensure_single_instance() {
