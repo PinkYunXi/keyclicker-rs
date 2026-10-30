@@ -2,15 +2,21 @@
 use std::sync::atomic::{AtomicIsize, Ordering};
 use std::sync::OnceLock;
 
-use windows::Win32::Foundation::{HWND, LPARAM, LRESULT, WPARAM};
+use windows::Win32::Foundation::{HWND, LPARAM, LRESULT, POINT, WPARAM};
 use core::ffi::c_void;
 use windows::Win32::UI::Input::KeyboardAndMouse::{
     RegisterHotKey, UnregisterHotKey, HOT_KEY_MODIFIERS, MOD_ALT, MOD_CONTROL, MOD_NOREPEAT, MOD_SHIFT,
     MOD_WIN,
 };
+use windows::Win32::UI::HiDpi::GetDpiForWindow;
 use windows::Win32::UI::WindowsAndMessaging::{
-    CallWindowProcW, DefWindowProcW, SetWindowLongPtrW, GWLP_WNDPROC, WM_HOTKEY, WNDPROC,
+    CallWindowProcW, DefWindowProcW, SetWindowLongPtrW, GWLP_WNDPROC, MINMAXINFO, SC_MAXIMIZE,
+    WM_GETMINMAXINFO, WM_HOTKEY, WM_SYSCOMMAND, WNDPROC,
 };
+
+/// 窗口最大尺寸（逻辑像素）：超过后可能出现排布异常，直接锁死上限
+pub const MAX_LOGICAL_W: f32 = 1120.0;
+pub const MAX_LOGICAL_H: f32 = 800.0;
 
 pub const ID_TOGGLE: i32 = 101;
 pub const ID_PANIC: i32 = 102;
@@ -33,12 +39,30 @@ unsafe extern "system" fn hotkey_proc(hwnd: HWND, msg: u32, wp: WPARAM, lp: LPAR
             let _ = tx.send(wp.0 as i32);
         }
     }
-    let orig = ORIG.load(Ordering::Acquire);
-    if orig == 0 {
-        return DefWindowProcW(hwnd, msg, wp, lp);
+    // 禁用最大化：系统菜单 / 双击标题栏 / Win+↑ 都会被这里挡掉
+    if msg == WM_SYSCOMMAND && (wp.0 as u32 & 0xFFF0) == SC_MAXIMIZE {
+        return LRESULT(0);
     }
-    let f: WNDPROC = std::mem::transmute(orig);
-    CallWindowProcW(f, hwnd, msg, wp, lp)
+    let orig = ORIG.load(Ordering::Acquire);
+    let result = if orig == 0 {
+        DefWindowProcW(hwnd, msg, wp, lp)
+    } else {
+        let f: WNDPROC = std::mem::transmute(orig);
+        CallWindowProcW(f, hwnd, msg, wp, lp)
+    };
+    // 限制最大尺寸（拖拽与最大化都受此约束）
+    if msg == WM_GETMINMAXINFO {
+        let mmi = lp.0 as *mut MINMAXINFO;
+        if !mmi.is_null() {
+            let dpi = GetDpiForWindow(hwnd);
+            let scale = if dpi == 0 { 1.0 } else { dpi as f32 / 96.0 };
+            let w = (MAX_LOGICAL_W * scale) as i32;
+            let h = (MAX_LOGICAL_H * scale) as i32;
+            (*mmi).ptMaxTrackSize = POINT { x: w, y: h };
+            (*mmi).ptMaxSize = POINT { x: w, y: h };
+        }
+    }
+    result
 }
 
 /// 子类化窗口并安装热键消息通道（必须在 UI 线程调用）

@@ -564,6 +564,8 @@ fn main() -> wry::Result<()> {
         .with_decorations(false)
         .with_min_inner_size(tao::dpi::LogicalSize::new(720.0, 520.0))
         .with_inner_size(tao::dpi::LogicalSize::new(900.0, 640.0))
+        .with_maximizable(false)
+        .with_max_inner_size(tao::dpi::LogicalSize::new(1120.0, 800.0))
         .build(&event_loop)
         .expect("create window");
     let hwnd = window.hwnd() as isize;
