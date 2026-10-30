@@ -3,6 +3,9 @@ name = "keyclicker-rs"
 version = "0.9.0-beta"
 edition = "2021"
 
+[build-dependencies]
+winresource = "0.1"
+
 [dependencies]
 wry = { version = "0.57", features = ["devtools"] }
 tao = "0.37"
