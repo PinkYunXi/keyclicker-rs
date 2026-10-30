@@ -528,6 +528,21 @@ fn handle_ipc(
             }
             Value::Null
         }
+        "hotkey.suspend" => {
+            let hwnd = state.borrow().hwnd;
+            hotkeys::unregister(hwnd, hotkeys::ID_TOGGLE);
+            hotkeys::unregister(hwnd, hotkeys::ID_PANIC);
+            json!({ "ok": true })
+        }
+        "hotkey.resume" => {
+            let (toggle, panic) = {
+                let st = state.borrow();
+                (st.config.hotkeys.toggle.clone(), st.config.hotkeys.panic.clone())
+            };
+            let hwnd = state.borrow().hwnd;
+            let (a, b) = hotkeys::re_register(hwnd, &toggle, &panic);
+            json!({ "toggle": a, "panic": b })
+        }
         "settings.get" => {
             let st = state.borrow();
             json!({
