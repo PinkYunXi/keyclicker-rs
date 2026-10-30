@@ -1,4 +1,4 @@
-# KeyClicker 0.9.0-alpha
+# KeyClicker 0.9.0-beta
 
 Windows 键盘连点 / 定时按键工具，用 **Rust + WebView2** 重写（旧版为 Python + PyQt6）。
 
@@ -60,7 +60,7 @@ cargo build --release
 - **自签名证书无效**，不会消除 SmartScreen 提示，请勿使用
 - 免费 OV 证书初期仍可能提示，需要累积下载量；EV 证书才能近乎即时建立信誉
 
-## 已知限制（alpha）
+## 已知限制（beta）
 
 - 需以不低于目标程序的权限运行（向管理员程序发键需右键以管理员运行）
 - 窗口匹配的正则为大小写不敏感的部分匹配
