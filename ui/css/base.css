@@ -1,0 +1,385 @@
+/* =============================================================================
+   KeyClicker Next —— 基础层 (base.css)
+   reset / 排版 / 外壳布局 / 滚动条 / 焦点 / 无障碍。
+   ========================================================================== */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  height: 100%;
+  /* 背景透明以便 WebView2 透出 Mica；--bg-solid 作为纯色兜底 */
+  background-color: transparent;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  overscroll-behavior: none;
+}
+
+/* 没有 Mica（浏览器 mock、Win10、Mica 被禁用）时用纯色兜底 */
+html:not([data-mica="on"]) {
+  background-color: var(--bg-solid);
+}
+
+body {
+  margin: 0;
+  min-width: 0; /* 自适应：最小尺寸由窗口层（tao min_inner_size）保证 */
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background-color: transparent;
+  color: var(--text-primary);
+  font-family: var(--font-ui);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  font-weight: 400;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+/* Mica 着色层：叠在透明背景上的一层极淡渐变，营造层次 */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image: var(--mica-tint);
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+/* ---- 排版 ---------------------------------------------------------------- */
+h1, h2, h3, h4, h5, h6 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 600;
+  line-height: var(--lh-tight);
+  color: var(--text-primary);
+}
+
+h1 { font-size: var(--fs-h1); }
+h2 { font-size: var(--fs-h2); }
+h3 { font-size: var(--fs-body-lg); font-weight: 600; }
+
+p { margin: 0; }
+
+a {
+  color: var(--text-link);
+  text-decoration: none;
+}
+
+a:hover { text-decoration: underline; }
+
+small { font-size: var(--fs-small); color: var(--text-secondary); }
+
+code, kbd, samp, pre {
+  font-family: var(--font-mono);
+  font-size: 0.95em;
+}
+
+ul, ol { margin: 0; padding: 0; }
+
+img, svg { vertical-align: middle; }
+img { border-style: none; }
+
+button, input, select, textarea {
+  font: inherit;
+  color: inherit;
+  letter-spacing: inherit;
+}
+
+button { margin: 0; }
+
+[hidden] { display: none !important; }
+
+::selection {
+  background-color: var(--accent);
+  color: var(--text-on-accent);
+}
+
+/* ---- 滚动条（Win11 细滚动条）-------------------------------------------- */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  min-height: 28px;
+  border: 3px solid transparent;
+  border-radius: var(--radius-pill);
+  background-color: var(--scrollbar-thumb);
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover,
+::-webkit-scrollbar-thumb:active {
+  background-color: var(--scrollbar-thumb-hover);
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* ---- 焦点 ---------------------------------------------------------------- */
+:focus {
+  outline: none;
+}
+
+:focus-visible {
+  outline: var(--focus-outline);
+  outline-offset: var(--focus-offset);
+}
+
+/* 表单控件用自身的强调色边框表达焦点，避免与焦点环叠加过重 */
+.input:focus-visible,
+.select:focus-visible,
+textarea:focus-visible,
+input:focus-visible {
+  outline: none;
+}
+
+/* ---- 外壳布局 ------------------------------------------------------------ */
+#titlebar {
+  overflow: hidden;
+  position: relative;
+  z-index: var(--z-titlebar);
+  flex: none;
+  height: var(--titlebar-h);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding-left: var(--space-4);
+  user-select: none;
+}
+
+#pagebar {
+  position: relative;
+  z-index: var(--z-pagebar);
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: var(--pagebar-h);
+  /* 宽窗口下与 #view 的居中内容左右对齐 */
+  padding-left: max(var(--space-4),
+    calc((100% - (var(--view-max) + var(--space-6) * 2)) / 2 + var(--space-6)));
+  padding-right: max(var(--space-3),
+    calc((100% - (var(--view-max) + var(--space-6) * 2)) / 2 + var(--space-5)));
+  border-bottom: 1px solid var(--divider);
+  background: var(--pagebar-bg);
+}
+
+#view {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  max-width: calc(var(--view-max) + var(--space-6) * 2);
+  margin: 0 auto;
+  padding: var(--space-5) var(--space-6) var(--space-6);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
+  gap: var(--space-4);
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+}
+
+/* 宽窗口下内容卡片收敛居中，避免卡片很宽但内容挤在左边 */
+#view > .card {
+  width: 100%;
+  max-width: var(--view-max);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+#statusbar {
+  flex: none;
+  height: var(--statusbar-h);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: 0 var(--space-4);
+  border-top: 1px solid var(--divider);
+  font-size: var(--fs-caption);
+  line-height: 1;
+  color: var(--text-secondary);
+  user-select: none;
+}
+
+#statusbar > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  flex: 0 1 auto;
+}
+
+#statusbar > #status-right {
+  flex: 0 0 auto;
+  gap: 10px;
+  margin-left: auto;
+}
+
+#statusbar .row.tight {
+  gap: 6px;
+}
+
+#statusbar .kbd {
+  height: 19px;
+  min-width: 19px;
+  padding: 0 5px;
+  font-size: 10.5px;
+  border-color: var(--border-strong);
+  border-bottom-width: 1px;
+  background-color: var(--bg-input);
+}
+
+#statusbar .status-key {
+  font-family: var(--font-mono);
+  color: var(--text-tertiary);
+}
+
+#statusbar .faint {
+  color: var(--text-tertiary);
+}
+
+#toasts {
+  display: none !important; /* 已关闭弹出提示 */
+  user-select: none;
+  position: fixed;
+  right: var(--space-4);
+  bottom: calc(var(--statusbar-h) + var(--space-3));
+  z-index: var(--z-toast);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-2);
+  pointer-events: none;
+}
+
+#overlay-root {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-overlay);
+  pointer-events: none;
+}
+
+#overlay-root > * {
+  pointer-events: auto;
+}
+
+/* 启动骨架（main.js 渲染出真实视图后由 core.js / pages.js 移除） */
+.boot-view {
+  display: grid;
+  gap: var(--space-4);
+  padding-top: var(--space-1);
+}
+
+/* ---- 工具类 -------------------------------------------------------------- */
+.drag-region { -webkit-app-region: drag; }
+.no-drag,
+#titlebar button,
+#titlebar a,
+#titlebar input { -webkit-app-region: no-drag; }
+
+.is-disabled {
+  opacity: 0.45;
+  pointer-events: none;
+  cursor: default;
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-size: 0.95em;
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+.visually-hidden {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.selectable { user-select: text; }
+
+.grow { flex: 1 1 auto; min-width: 0; }
+
+.truncate {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.muted { color: var(--text-secondary); }
+.faint { color: var(--text-tertiary); }
+
+/* ---- 自适应 -------------------------------------------------------------- */
+@media (max-width: 980px) {
+  #view {
+    padding: var(--space-4) var(--space-4) var(--space-5);
+    gap: var(--space-3);
+  }
+}
+
+/* 最小窗口 720x520：压缩外壳留白，保证内容不被挤爆 */
+@media (max-width: 760px) {
+  #titlebar {
+    padding-left: var(--space-3);
+  }
+
+  #pagebar {
+    padding: 0 var(--space-2) 0 var(--space-3);
+  }
+
+  #view {
+    padding: var(--space-3) var(--space-3) var(--space-4);
+    gap: var(--space-3);
+  }
+
+  #statusbar {
+    padding: 0 var(--space-3);
+  }
+
+  #statusbar > #status-right {
+    gap: var(--space-2);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -1,6 +1,6 @@
 import os, sys
 root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # keyclicker-rs
-ui = os.path.join(os.path.dirname(root), "keyclicker-next", "ui")
+ui = os.path.join(root, "ui")
 out = os.path.join(root, "src", "ui_assets.rs")
 exts = {".html", ".css", ".js", ".svg", ".png", ".ico"}
 files = []

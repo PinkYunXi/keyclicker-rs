@@ -1,4 +1,4 @@
-// 配置结构、路径解析、旧版兼容（对应 C++ 版 config.cpp）
+// 配置结构、路径解析与旧版配置兼容
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 

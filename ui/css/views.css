@@ -1,0 +1,1089 @@
+/* ui/css/views.css — 业务视图专用样式
+ *
+ * 只做两件事：
+ *   1) 定义 main.js 建好的容器骨架样式（.kct-page / .kct-cards / .kct-list）
+ *   2) 定义 .kct- 前缀的业务组件样式
+ * 不重定义 components.css 的通用类（.btn/.input/.card/.field/.badge/.dialog/.overlay/.kbd…），
+ * 颜色一律走 tokens.css 的变量。
+ */
+
+/* ══ 页面骨架（main.js 创建，ui-tasks 只出样式） ══════════════════════ */
+.kct-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  width: 100%;
+  min-width: 0;
+}
+
+.kct-page-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex: 0 0 auto;
+}
+
+.kct-cards {
+  display: block;
+  flex: 0 0 auto;
+}
+
+.kct-list {
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 auto;
+  min-width: 0;
+}
+
+/* 弹层 / 列表里用 hidden 隐藏时必须真的隐藏（组件类可能自带 display） */
+.kct-card [hidden],
+.kct-overlay [hidden],
+.kct-list [hidden] {
+  display: none !important;
+}
+
+/* ══ 卡片骨架 ═══════════════════════════════════════════════════════ */
+.kct-card {
+  box-sizing: border-box;
+}
+
+.kct-click-card,
+.kct-timer-card,
+.kct-task-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.kct-task-card {
+  min-height: 180px;
+  width: 100%;
+}
+
+.kct-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.kct-card-headtext {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.kct-card-title {
+  margin: 0;
+  font-size: var(--fs-card-title);
+  font-weight: 600;
+  letter-spacing: -0.1px;
+  color: var(--text-primary);
+  line-height: 1.3;
+}
+
+.kct-card-sub {
+  margin: 0;
+  font-size: var(--fs-small);
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+/* 表单两列：按键（宽）+ 间隔（窄）；窗口匹配与主操作通栏 */
+.kct-click-card .kct-card-body,
+.kct-timer-card .kct-card-body {
+  display: grid;
+  grid-template-columns: minmax(0, 2.05fr) minmax(0, 1fr);
+  column-gap: var(--space-6);
+  row-gap: var(--space-4);
+  align-items: start;
+  min-width: 0;
+}
+
+.kct-timer-card .kct-card-body {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.kct-card-body > * {
+  min-width: 0;
+}
+
+.kct-field-key,
+.kct-field-time {
+  grid-column: 1;
+}
+
+.kct-field-interval,
+.kct-field-gap {
+  grid-column: 2;
+}
+
+.kct-field-seq,
+.kct-wm,
+.kct-actions {
+  grid-column: 1 / -1;
+}
+
+.kct-type-ico {
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  border-radius: 10px;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.kct-type-ico svg {
+  width: 18px;
+  height: 18px;
+}
+
+.kct-type-ico-timer {
+  background: var(--bg-card-hover);
+  color: var(--text-secondary);
+}
+
+/* ══ 表单字段（布局层，外观交给 components.css） ═════════════════════ */
+.kct-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.kct-field-label {
+  color: var(--text-secondary);
+}
+
+.kct-field-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.kct-inline {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  row-gap: var(--space-1);
+  min-width: 0;
+}
+
+.kct-num {
+  width: 92px;
+  text-align: right;
+  padding-right: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.kct-unit {
+  font-size: var(--fs-small);
+  color: var(--text-tertiary);
+}
+
+/* 间隔 / 步骤间隔的说明文字单独占一行，与左列提示对齐 */
+.kct-field-interval .kct-interval-hint,
+.kct-field-gap .kct-inline .field-hint {
+  flex: 1 1 100%;
+}
+
+.kct-key-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.kct-key-input {
+  flex: 1 1 220px;
+  max-width: 420px;
+}
+
+.kct-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--divider);
+}
+
+.kct-add-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  width: auto;
+  min-width: 200px;
+  height: var(--control-h);
+  padding: 0 20px;
+}
+
+.kct-add-btn.btn svg {
+  width: 15px;
+  height: 15px;
+}
+
+/* ══ 按键录入按钮 ═══════════════════════════════════════════════════ */
+.kct-btn-rec {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  white-space: nowrap;
+  min-width: 96px;
+}
+
+/* 录入：红点；录制中：红方块 + 危险色描边 */
+.kct-btn-rec::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  flex: none;
+  border-radius: 50%;
+  background-color: var(--danger);
+  transition: border-radius var(--dur-fast) var(--ease),
+              background-color var(--dur-fast) var(--ease);
+}
+
+.kct-btn-rec.kct-recording {
+  color: var(--danger);
+  border-color: var(--danger);
+  background-color: var(--danger-soft);
+  animation: kct-pulse 1.2s var(--ease) infinite;
+}
+
+.kct-btn-rec.kct-recording::before {
+  border-radius: 2px;
+  background-color: var(--danger);
+}
+
+@keyframes kct-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .58; }
+}
+
+/* ══ 窗口匹配控件 ═══════════════════════════════════════════════════ */
+.kct-wm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--divider);
+  min-width: 0;
+}
+
+.kct-wm-head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.kct-wm-label {
+  font-size: var(--fs-small);
+}
+
+.kct-wm-tip {
+  color: var(--text-tertiary);
+}
+
+.kct-wm-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: nowrap;
+  min-width: 0;
+}
+
+.kct-wm-field {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 640px;
+}
+
+.kct-wm-input {
+  width: 100%;
+  padding-right: 36px;
+}
+
+.kct-wm .btn.kct-wm-caret {
+  position: absolute;
+  right: 3px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 26px;
+  height: 26px;
+  min-width: 26px;
+  flex: 0 0 auto;
+  color: var(--text-secondary);
+}
+
+.kct-wm .btn.kct-wm-caret svg {
+  width: 14px;
+  height: 14px;
+}
+
+.kct-wm-mode {
+  flex: 0 0 auto;
+  width: 96px;
+}
+
+.kct-wm-grab {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.kct-wm-grab.kct-wm-grabbing {
+  color: var(--warning);
+  border-color: var(--warning);
+  font-variant-numeric: tabular-nums;
+}
+
+.kct-wm-pop {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  max-height: 232px;
+  overflow-y: auto;
+  padding: 4px;
+  background: var(--bg-flyout);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-control);
+  box-shadow: var(--shadow-flyout);
+  animation: kct-pop-in var(--dur-fast) var(--ease);
+}
+
+@keyframes kct-pop-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.kct-wm-item {
+  display: block;
+  width: 100%;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: var(--fs-small);
+  font-family: inherit;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+
+.kct-wm-item:hover,
+.kct-wm-item:focus-visible {
+  background: var(--bg-card-hover);
+}
+
+.kct-wm-item-active {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.kct-wm-item-empty {
+  color: var(--text-tertiary);
+  cursor: default;
+}
+
+.kct-wm-item-empty:hover {
+  background: transparent;
+}
+
+.kct-wm-hint {
+  color: var(--text-tertiary);
+}
+
+/* ══ 序列摘要 / 序列块 / 按键 chip ═══════════════════════════════════ */
+.kct-seq-line {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.kct-seq-summary {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: var(--control-h);
+  padding: 4px 10px;
+  border: 1px solid var(--border-input);
+  border-radius: var(--radius-control);
+  background: var(--bg-input);
+  box-sizing: border-box;
+}
+
+.kct-seq-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+
+.kct-seq-btn.btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+.kct-seq-btn.kct-seq-btn-filled {
+  color: var(--accent);
+  border-color: var(--border-accent);
+}
+
+.kct-seq-count {
+  font-size: var(--fs-small);
+  color: var(--text-tertiary);
+  font-variant-numeric: tabular-nums;
+}
+
+.kct-seq-arrow {
+  font-size: var(--fs-small);
+  color: var(--text-tertiary);
+}
+
+.kct-seq-empty {
+  font-size: var(--fs-small);
+  color: var(--text-tertiary);
+}
+
+.kct-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 6px 1px 8px;
+  border: 1px solid var(--border-accent);
+  border-radius: var(--radius-pill);
+  background: var(--accent-soft);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: var(--fs-small);
+  line-height: 1.6;
+  white-space: nowrap;
+}
+
+.kct-chip-static {
+  padding-right: 8px;
+}
+
+.kct-chip-text {
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kct-chip-x {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.kct-chip-x svg {
+  width: 11px;
+  height: 11px;
+}
+
+.kct-chip-x:hover {
+  color: var(--danger);
+  background: var(--bg-card-hover);
+}
+
+.kct-chip-x:disabled {
+  opacity: .4;
+  cursor: default;
+}
+
+.kct-seq-box {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-height: 72px;
+  padding: 12px;
+  border: 1px solid var(--border-input);
+  border-radius: var(--radius-control);
+  background: var(--bg-input);
+  box-sizing: border-box;
+}
+
+.kct-seq-box.kct-seq-recording {
+  border-color: var(--border-accent);
+  box-shadow: inset 0 0 0 1px var(--border-accent);
+}
+
+/* ══ 弹层（序列编辑器 / 关于） ═══════════════════════════════════════ */
+/* .overlay / .dialog 的尺寸与遮罩由 components.css 提供，这里只做宽度微调 */
+.kct-about-dialog {
+  width: min(520px, 100%);
+}
+
+.kct-dialog-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex: 0 0 auto;
+}
+
+.kct-dialog-headtext {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.kct-dialog-title {
+  margin: 0;
+  font-size: var(--fs-card-title);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.kct-dialog-sub {
+  font-size: var(--fs-small);
+  color: var(--text-tertiary);
+}
+
+.kct-dialog-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.kct-dialog-foot {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex: 0 0 auto;
+}
+
+.kct-dialog-spacer {
+  flex: 1 1 auto;
+}
+
+.kct-dialog-close {
+  flex: 0 0 auto;
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+  color: var(--text-secondary);
+}
+
+.kct-dialog-close:hover {
+  border-color: transparent;
+  background: var(--bg-input);
+  color: var(--text-primary);
+}
+
+.kct-rec-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.kct-seq-manual-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  max-width: 640px;
+}
+
+.kct-seq-manual {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* ══ 任务列表 ═══════════════════════════════════════════════════════ */
+.kct-list-tools {
+  display: flex;
+  align-items: center;
+  align-self: center;
+  gap: var(--space-2);
+  flex: 0 0 auto;
+}
+
+.kct-list-stat {
+  font-size: var(--fs-small);
+  color: var(--text-tertiary);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.kct-btn-clear {
+  height: var(--control-h-sm);
+  padding: 0 10px;
+  font-size: var(--fs-small);
+  white-space: nowrap;
+}
+
+.kct-task-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.kct-task-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.kct-task-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 48px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-layer);
+  box-sizing: border-box;
+  transition: background var(--dur-fast) var(--ease),
+              border-color var(--dur-fast) var(--ease);
+  min-width: 0;
+}
+
+.kct-task-row:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--border-strong);
+}
+
+.kct-task-row[data-state="running"] {
+  border-color: var(--border-accent);
+}
+
+.kct-task-row[data-state="paused"] {
+  border-color: var(--warning);
+}
+
+.kct-task-row.kct-row-blocked {
+  border-color: var(--warning);
+}
+
+.kct-task-ico {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
+  border-radius: 8px;
+}
+
+.kct-task-ico svg {
+  width: 15px;
+  height: 15px;
+}
+
+.kct-task-ico-click {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.kct-task-ico-timer {
+  background: var(--bg-input);
+  color: var(--warning);
+}
+
+.kct-task-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.kct-task-line {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.kct-task-key {
+  font-family: var(--font-mono);
+  font-size: var(--fs-body);
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 55%;
+}
+
+.kct-task-info {
+  font-size: var(--fs-small);
+  color: var(--text-tertiary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.kct-task-win {
+  font-size: var(--fs-caption);
+  color: var(--text-tertiary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.kct-task-win-warn {
+  color: var(--warning);
+}
+
+.kct-task-stats {
+  display: flex;
+  flex-direction: row;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: 4px;
+  min-width: 88px;
+  flex: 0 0 auto;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.kct-task-stat-main {
+  font-family: var(--font-mono);
+  font-size: var(--fs-body);
+  color: var(--text-primary);
+  line-height: 1.25;
+}
+
+.kct-task-stat-sub {
+  font-size: var(--fs-small);
+  color: var(--text-tertiary);
+  line-height: 1.25;
+}
+
+.kct-task-badge {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.badge.kct-task-badge.kct-badge-blocked {
+  color: var(--warning);
+  border-color: var(--warning);
+  background: transparent;
+}
+
+.kct-task-ops {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: 0 0 auto;
+}
+
+.kct-task-ops .btn.kct-op {
+  width: 28px;
+  height: 28px;
+  color: var(--text-secondary);
+}
+
+.kct-task-ops .btn.kct-op:hover {
+  color: var(--text-primary);
+}
+
+.kct-task-ops .btn.kct-op svg {
+  width: 14px;
+  height: 14px;
+}
+
+.kct-op-del:hover {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+.kct-op-hidden {
+  display: none;
+}
+
+.kct-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: var(--space-6) var(--space-5) 40px;
+  text-align: center;
+  color: var(--text-tertiary);
+}
+
+.kct-empty-ico {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  margin-bottom: var(--space-2);
+  border-radius: 14px;
+  background: var(--bg-input);
+  color: var(--text-secondary);
+}
+
+.kct-empty-ico svg {
+  width: 22px;
+  height: 22px;
+}
+
+.kct-empty-title {
+  font-size: var(--fs-body-lg);
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.kct-empty-sub {
+  font-size: var(--fs-small);
+  max-width: 420px;
+  line-height: 1.6;
+}
+
+/* ══ 关于 / 快捷键 ═══════════════════════════════════════════════════ */
+.kct-about-body {
+  gap: var(--space-4);
+}
+
+.kct-about-hero {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.kct-about-logo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  flex: 0 0 auto;
+  border-radius: 14px;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.kct-about-herotext {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.kct-about-name {
+  font-size: var(--fs-title);
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+.kct-about-meta {
+  font-size: var(--fs-small);
+  color: var(--text-tertiary);
+}
+
+.kct-about-desc {
+  font-size: var(--fs-small);
+  color: var(--text-secondary);
+}
+
+.kct-about-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--divider);
+}
+
+.kct-about-h {
+  margin: 0;
+  font-size: var(--fs-small);
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.kct-hk-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: 2px 0;
+}
+
+.kct-hk-name {
+  font-size: var(--fs-body);
+  color: var(--text-primary);
+}
+
+.kct-keys {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex: 0 0 auto;
+}
+
+.kct-keys-plus {
+  font-size: var(--fs-small);
+  color: var(--text-tertiary);
+}
+
+.kct-about-hint {
+  margin: 0;
+  line-height: 1.6;
+}
+
+.kct-about-path {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--fs-small);
+  color: var(--text-secondary);
+  word-break: break-all;
+  line-height: 1.5;
+}
+
+.kct-about-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.kct-about-opendir {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.kct-about-opendir.btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* ══ 窄窗口适配 ═════════════════════════════════════════════════════ */
+@media (max-width: 700px) {
+  /* 单列：字段不再并排，避免 720 宽时输入框过窄 */
+  .kct-click-card .kct-card-body,
+  .kct-timer-card .kct-card-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .kct-field-key,
+  .kct-field-interval,
+  .kct-field-time,
+  .kct-field-gap,
+  .kct-field-seq,
+  .kct-wm,
+  .kct-actions {
+    grid-column: 1;
+  }
+
+  .kct-key-input {
+    max-width: none;
+  }
+
+  .kct-wm-field {
+    max-width: none;
+  }
+}
+
+@media (max-width: 780px) {
+  .kct-card-head {
+    gap: var(--space-2);
+  }
+
+  .kct-add-btn {
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+
+  .kct-wm-row {
+    gap: 6px;
+  }
+
+  .kct-wm-mode {
+    flex: 0 0 88px;
+  }
+
+  .kct-wm-grab {
+    padding: 0 10px;
+    font-size: var(--fs-small);
+  }
+
+  .kct-task-info {
+    display: none;
+  }
+
+  .kct-task-key {
+    max-width: 48%;
+  }
+
+  .kct-chip-text {
+    max-width: 150px;
+  }
+
+  .kct-overlay {
+    padding: var(--space-3);
+  }
+
+  .kct-seq-dialog,
+  .kct-about-dialog {
+    width: 96vw;
+  }
+}
+
+@media (max-width: 720px) {
+  .kct-task-win {
+    display: none;
+  }
+
+  .kct-task-badge {
+    display: none;
+  }
+
+  .kct-task-stats {
+    min-width: 64px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kct-btn-rec.kct-recording,
+  .kct-wm-pop {
+    animation: none;
+  }
+
+  .kct-task-row {
+    transition: none;
+  }
+}

@@ -1,15 +1,24 @@
 @echo off
-chcp 65001 >nul
 setlocal
 cd /d "%~dp0"
-echo [1/2] 编译 release...
-cargo build --release || goto :fail
-echo [2/2] 部署到 D:\AITest\KeyClicker-RS\dist ...
-if not exist "D:\AITest\KeyClicker-RS\dist" mkdir "D:\AITest\KeyClicker-RS\dist"
-copy /y "target\release\keyclicker-rs.exe" "D:\AITest\KeyClicker-RS\dist\keyclicker-rs.exe" >nul || goto :fail
+
+echo [1/3] Generating embedded UI assets...
+python tools\gen_ui_assets.py
+if errorlevel 1 goto fail
+
+echo [2/3] Building release...
+cargo build --release
+if errorlevel 1 goto fail
+
+echo [3/3] Copying to dist...
+if not exist "dist" mkdir "dist"
+copy /y "target\release\keyclicker-rs.exe" "dist\keyclicker-rs.exe" >nul
+if errorlevel 1 goto fail
+
 echo.
-echo [ok] 已部署：D:\AITest\KeyClicker-RS\dist\keyclicker-rs.exe
+echo [ok] Output: %cd%\dist\keyclicker-rs.exe
 exit /b 0
+
 :fail
-echo [x] 构建失败
+echo [x] Build failed
 exit /b 1

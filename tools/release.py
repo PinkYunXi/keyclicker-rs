@@ -3,6 +3,7 @@
 按 docs/RELEASING.md 的规则：patch 位 +1，后缀表示阶段，号不重置。
 """
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -114,9 +115,10 @@ def main():
     d = json.loads(up)
     print("已发布:", d["browser_download_url"])
 
-    # 7) 同步到本地部署目录
-    dist = Path("D:/AITest/KeyClicker-RS/dist")
-    if dist.exists():
+    # 7) 同步到本地部署目录（可用环境变量 KCDIST 指定，默认项目内 dist/）
+    dist = Path(os.environ.get("KCDIST", str(ROOT / "dist")))
+    if dist.exists() or True:
+        dist.mkdir(parents=True, exist_ok=True)
         subprocess.run(["taskkill", "/F", "/IM", "keyclicker-rs.exe"], capture_output=True)
         shutil.copyfile(built, dist / "keyclicker-rs.exe")
         print("已部署到", dist / "keyclicker-rs.exe")

@@ -1,8 +1,13 @@
-import subprocess, base64, json, os, sys
+import base64
+import json
+import os
+import subprocess
+import sys
+from pathlib import Path
 
 OWNER = "PinkYunXi"
 REPO = "keyclicker-rs"
-ROOT = "D:/AIproject/keyclicker-rs"
+ROOT = str(Path(__file__).resolve().parent.parent)
 SKIP_DIRS = {"target", ".git", "dist", "logs"}
 SKIP_EXT = {".log", ".pdb"}
 

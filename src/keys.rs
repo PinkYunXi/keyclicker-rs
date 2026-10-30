@@ -1,4 +1,4 @@
-// 键名 <-> Win32 虚拟键码：解析、格式化、校验（对齐 C++ 版与旧版 keyboard 库命名）
+// 键名 <-> Win32 虚拟键码：解析、格式化、校验
 
 pub const VK_NONE: u16 = 0;
 const BK: char = '\u{60}'; // 反引号
