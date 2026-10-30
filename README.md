@@ -7,8 +7,6 @@
 - 连点间隔下限 16 ms（约 60 次/秒）
 - 所有数据只存本地，不联网、不上传
 
-> Windows 发布版已申请 [SignPath Foundation](https://signpath.org/) 提供的开源项目免费代码签名。
-
 ## 功能
 
 - **连点**：按固定间隔反复发送按键或组合键，实时计数，可暂停 / 继续 / 停止
@@ -69,7 +67,3 @@ cargo build --release
 ## 许可
 
 MIT
-
----
-
-Windows 版代码签名由 [SignPath Foundation](https://signpath.org/) 提供。
