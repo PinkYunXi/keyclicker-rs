@@ -1,12 +1,12 @@
 // 全局热键：RegisterHotKey + 子类化窗口过程拦截 WM_HOTKEY
-use std::sync::atomic::{AtomicI32, AtomicIsize, AtomicU64, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicIsize, AtomicU32, AtomicU64, Ordering};
 use std::sync::OnceLock;
 
 use windows::Win32::Foundation::{HWND, LPARAM, LRESULT, POINT, WPARAM};
 use core::ffi::c_void;
 use windows::Win32::UI::Input::KeyboardAndMouse::{
-    RegisterHotKey, UnregisterHotKey, HOT_KEY_MODIFIERS, MOD_ALT, MOD_CONTROL, MOD_NOREPEAT, MOD_SHIFT,
-    MOD_WIN,
+    GetAsyncKeyState, RegisterHotKey, UnregisterHotKey, HOT_KEY_MODIFIERS, MOD_ALT, MOD_CONTROL,
+    MOD_NOREPEAT, MOD_SHIFT, MOD_WIN,
 };
 use windows::Win32::UI::HiDpi::GetDpiForWindow;
 use windows::Win32::UI::WindowsAndMessaging::{
@@ -23,11 +23,14 @@ pub const ID_PANIC: i32 = 102;
 
 static ORIG: AtomicIsize = AtomicIsize::new(0);
 
-/// 长按热键会产生连续的 WM_HOTKEY（MOD_NOREPEAT 在部分键盘/组合下不生效），
-/// 这里做 350ms 去抖，避免「开始/停止」被连点成 toggle 抖动。
+/// 长按热键时 Windows 会持续派发 WM_HOTKEY（MOD_NOREPEAT 对按住自动重复无效），
+/// 且重复延迟可能长达 1 秒。因此用「按住锁」：触发一次后一直忽略，
+/// 直到主键物理松开（轮询 GetAsyncKeyState）才重新允许触发。
+static LOCK_TOGGLE: AtomicBool = AtomicBool::new(false);
+static LOCK_PANIC: AtomicBool = AtomicBool::new(false);
+static VK_TOGGLE: AtomicU32 = AtomicU32::new(0);
+static VK_PANIC: AtomicU32 = AtomicU32::new(0);
 static LAST_FIRE_MS: AtomicU64 = AtomicU64::new(0);
-static LAST_FIRE_ID: AtomicI32 = AtomicI32::new(0);
-const HOTKEY_DEBOUNCE_MS: u64 = 350;
 
 fn now_ms() -> u64 {
     std::time::SystemTime::now()
@@ -58,15 +61,41 @@ unsafe extern "system" fn hotkey_proc(hwnd: HWND, msg: u32, wp: WPARAM, lp: LPAR
     }
     if msg == WM_HOTKEY {
         let id = wp.0 as i32;
-        let now = now_ms();
-        let last = LAST_FIRE_MS.load(Ordering::Relaxed);
-        let last_id = LAST_FIRE_ID.load(Ordering::Relaxed);
-        if !(id == last_id && now.saturating_sub(last) < HOTKEY_DEBOUNCE_MS) {
-            LAST_FIRE_MS.store(now, Ordering::Relaxed);
-            LAST_FIRE_ID.store(id, Ordering::Relaxed);
+        let lock = if id == ID_TOGGLE {
+            &LOCK_TOGGLE
+        } else if id == ID_PANIC {
+            &LOCK_PANIC
+        } else {
+            &LOCK_TOGGLE
+        };
+        if !lock.swap(true, Ordering::SeqCst) {
+            let vk = if id == ID_TOGGLE {
+                VK_TOGGLE.load(Ordering::Relaxed)
+            } else {
+                VK_PANIC.load(Ordering::Relaxed)
+            };
+            LAST_FIRE_MS.store(now_ms(), Ordering::Relaxed);
             if let Some(tx) = TX.get() {
                 let _ = tx.send(id);
             }
+            // 等主键松开再解锁，长按期间不会再触发
+            std::thread::spawn(move || {
+                if vk != 0 {
+                    loop {
+                        let down = unsafe { GetAsyncKeyState(vk as i32) } as u16 & 0x8000 != 0;
+                        if !down {
+                            break;
+                        }
+                        std::thread::sleep(std::time::Duration::from_millis(12));
+                    }
+                }
+                std::thread::sleep(std::time::Duration::from_millis(20));
+                if id == ID_TOGGLE {
+                    LOCK_TOGGLE.store(false, Ordering::SeqCst);
+                } else {
+                    LOCK_PANIC.store(false, Ordering::SeqCst);
+                }
+            });
         }
     }
     // 禁用最大化：系统菜单 / 双击标题栏 / Win+↑ 都会被这里挡掉
@@ -128,6 +157,11 @@ pub fn register(hwnd: isize, id: i32, combo: &str) -> bool {
     let Some((mods, vk)) = parse_combo(combo) else {
         return false;
     };
+    match id {
+        ID_TOGGLE => VK_TOGGLE.store(vk, Ordering::Relaxed),
+        ID_PANIC => VK_PANIC.store(vk, Ordering::Relaxed),
+        _ => {}
+    }
     unsafe { RegisterHotKey(Some(hwnd_from(hwnd)), id, mods, vk).is_ok() }
 }
 
