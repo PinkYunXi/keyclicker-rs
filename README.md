@@ -1,4 +1,4 @@
-# KeyClicker 0.9.0-beta
+# KeyClicker
 
 一个轻量的 Windows 键盘连点 / 定时按键工具。单文件绿色版，深色与浅色主题，配置全部保存在本地。
 
