@@ -80,10 +80,16 @@ unsafe extern "system" fn hotkey_proc(hwnd: HWND, msg: u32, wp: WPARAM, lp: LPAR
             }
             // 等主键松开再解锁，长按期间不会再触发
             std::thread::spawn(move || {
+                let started = std::time::Instant::now();
                 if vk != 0 {
                     loop {
                         let down = unsafe { GetAsyncKeyState(vk as i32) } as u16 & 0x8000 != 0;
                         if !down {
+                            break;
+                        }
+                        // 兜底：即使松开检测失败，也最多锁 3 秒，避免热键永久失效
+                        if started.elapsed() > std::time::Duration::from_secs(3) {
+                            crate::log_ipc(&format!("hotkey lock timeout id={id}"));
                             break;
                         }
                         std::thread::sleep(std::time::Duration::from_millis(12));

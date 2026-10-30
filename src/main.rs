@@ -792,8 +792,22 @@ fn main() -> wry::Result<()> {
             Event::UserEvent(UserEvent::Drag) => {
                 let _ = window.drag_window();
             }
-            Event::UserEvent(UserEvent::Minimize) => window.set_minimized(true),
-            Event::UserEvent(UserEvent::HideToTray) => window.set_visible(false),
+            Event::UserEvent(UserEvent::Minimize) => {
+                if recording_run.borrow_mut().take().is_some() {
+                    hook::set_recording(false);
+                    log_ipc("recording cancelled: minimized");
+                }
+                window.set_minimized(true);
+            }
+            Event::UserEvent(UserEvent::HideToTray) => {
+                // 录制中隐藏到托盘时，低级键盘钩子会继续吞键，导致全局热键与普通输入全部失效
+                if recording_run.borrow_mut().take().is_some() {
+                    hook::set_recording(false);
+                    log_ipc("recording cancelled: hidden to tray");
+                }
+                window.set_visible(false);
+                log_ipc("window hidden to tray");
+            }
             Event::UserEvent(UserEvent::TrayShow) => {
                 window.set_visible(true);
                 window.set_focus();
