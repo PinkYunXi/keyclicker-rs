@@ -58,12 +58,6 @@ cargo build --release
 
 `gen_ui_assets.py` 会把 `ui/` 目录下的界面资源内嵌进 exe；`build.bat` 可一键完成「生成资源 + 编译 + 部署」。
 
-## 未签名说明
-
-当前发布产物尚未签名，首次运行时 Windows 可能提示「已保护你的电脑」，点「更多信息 → 仍要运行」即可。
-
-Windows 版本计划由 [SignPath Foundation](https://signpath.org/) 提供开源项目代码签名。
-
 ## 已知限制
 
 - 仅支持 x64
@@ -75,3 +69,7 @@ Windows 版本计划由 [SignPath Foundation](https://signpath.org/) 提供开�
 ## 许可
 
 MIT
+
+---
+
+Windows 版代码签名由 [SignPath Foundation](https://signpath.org/) 提供。
