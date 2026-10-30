@@ -61,24 +61,19 @@ jobs:
         id: rename
         shell: pwsh
         run: |
-          $tag = "$env:GITHUB_REF" -replace '^refs/tags/', ''
+          $tag = ("$env:GITHUB_REF" -replace '^refs/tags/', '') -replace '^v', ''
           if (-not $tag) { $tag = 'dev' }
           $name = "KeyClicker-$tag-x64.exe"
           Copy-Item target/release/keyclicker-rs.exe $name
           "artifact=$name" >> $env:GITHUB_OUTPUT
           Write-Output "artifact name: $name"
 
-      - name: 上传构建产物
+      - name: 上传构建产物（仅 artifact，不发布）
         id: upload
         uses: actions/upload-artifact@v4
         with:
-          name: KeyClicker-unsigned
+          name: ${{ steps.rename.outputs.artifact }}
           path: ${{ steps.rename.outputs.artifact }}
 
-      - name: 上传到 Release（打 tag 时）
-        if: startsWith(github.ref, 'refs/tags/v')
-        uses: softprops/action-gh-release@v2
-        with:
-          files: ${{ steps.rename.outputs.artifact }}
-          name: KeyClicker ${{ github.ref_name }} (x64)
-          prerelease: true
+      # Release 由 tools/release.py 统一发布，CI 不再自动上传，
+      # 否则会出现「手工上传」和「CI 上传」两份同名产物。
