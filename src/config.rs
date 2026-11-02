@@ -25,6 +25,7 @@ pub struct WindowFilter {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
 pub struct TaskSpec {
     #[serde(rename = "type", default = "d_click")]
     pub kind: String,
@@ -40,9 +41,9 @@ pub struct TaskSpec {
     pub seconds: i32,
     #[serde(default = "d_gap")]
     pub gap: i32,
-    #[serde(default, alias = "window_match", alias = "windowMatch")]
+    #[serde(default, alias = "window_match")]
     pub window_match: String,
-    #[serde(default, alias = "window_mode", alias = "windowMode")]
+    #[serde(default, alias = "window_mode")]
     pub window_mode: String,
 }
 
@@ -77,6 +78,7 @@ impl Default for Hotkeys {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
+#[serde(rename_all = "camelCase")]
 pub struct WindowState {
     #[serde(default, alias = "always_on_top")]
     pub always_on_top: bool,
@@ -96,6 +98,7 @@ impl Default for ClosePrefs {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
 pub struct Config {
     #[serde(default = "d_version")]
     pub version: i32,
@@ -110,7 +113,7 @@ pub struct Config {
     #[serde(default)]
     pub close: ClosePrefs,
     /// 删除配置页前是否弹确认框（可在设置里关闭）
-    #[serde(default = "d_true")]
+    #[serde(default = "d_true", alias = "confirm_delete_page")]
     pub confirm_delete_page: bool,
     #[serde(default)]
     pub pages: Vec<Page>,
@@ -257,6 +260,39 @@ mod tests {
         assert_eq!(cfg.pages[0].tasks[0].window_match, "x");
         assert_eq!(cfg.pages[0].tasks[1].seq.len(), 2);
         assert_eq!(cfg.theme, "light");
+    }
+
+    #[test]
+    fn serializes_camel_case() {
+        let mut cfg = Config::default();
+        cfg.selected_page = 2;
+        cfg.window.always_on_top = true;
+        cfg.confirm_delete_page = false;
+        cfg.pages[0].tasks.push(TaskSpec {
+            kind: "timer".into(),
+            seq: vec!["a".into()],
+            window_match: "记事本".into(),
+            window_mode: "exact".into(),
+            ..TaskSpec::default()
+        });
+        let v = serde_json::to_value(&cfg).unwrap();
+        // 前端（ui/js/state.js）按 camelCase 读取，字段名必须一致
+        assert_eq!(v["selectedPage"], 2);
+        assert_eq!(v["window"]["alwaysOnTop"], true);
+        assert_eq!(v["confirmDeletePage"], false);
+        let t = &v["pages"][0]["tasks"][0];
+        assert_eq!(t["type"], "timer");
+        assert_eq!(t["windowMatch"], "记事本");
+        assert_eq!(t["windowMode"], "exact");
+
+        // 旧 snake_case 文件仍能读回（向后兼容）
+        let old = r#"{"version":3,"selected_page":1,"window":{"always_on_top":true},"confirm_delete_page":false,"pages":[{"name":"A","tasks":[{"type":"click","keys":"a","window_match":"x","window_mode":"regex"}]},{"name":"B","tasks":[]}]}"#;
+        let back = Config::from_json(old).unwrap();
+        assert_eq!(back.selected_page, 1);
+        assert!(back.window.always_on_top);
+        assert!(!back.confirm_delete_page);
+        assert_eq!(back.pages[0].tasks[0].window_match, "x");
+        assert_eq!(back.pages[0].tasks[0].window_mode, "regex");
     }
 
     #[test]

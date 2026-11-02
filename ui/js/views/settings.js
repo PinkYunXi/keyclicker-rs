@@ -122,7 +122,7 @@
       }
       KC.host.call('settings.setConfirmDeletePage', { on: value }).catch(function () {});
       if (draft) draft.confirmDeletePage = value;
-      syncState(function (config) { config.confirm_delete_page = value; });
+      syncState(function (config) { config.confirmDeletePage = value; });
     });
     return h('div', { class: 'kct-set-section' }, [
       h('div', { class: 'kct-set-title', text: '配置页' }),

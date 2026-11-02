@@ -469,7 +469,7 @@
       panic: hk.panic || 'f6'
     };
     window.KC.prefs = {
-      confirmDeletePage: !(config && config.confirm_delete_page === false)
+      confirmDeletePage: !(config && config.confirmDeletePage === false)
     };
     if (KC.status && typeof KC.status.reset === 'function') {
       try { KC.status.reset(); } catch (e) { /* ignore */ }
