@@ -49,6 +49,8 @@ enum UserEvent {
     GrabTick(i32),
     GrabResult(Value),
     Tray,
+    /// 首屏就绪后再显示窗口，避免 WebView2 初始化期间的白屏
+    ShowWindow,
 }
 
 struct RecordingState {
@@ -187,16 +189,19 @@ fn load_window_icon() -> Option<tao::window::Icon> {
     };
     tao::window::Icon::from_rgba(rgba, info.width, info.height).ok()
 }
+static LOG_T0: std::sync::OnceLock<std::time::Instant> = std::sync::OnceLock::new();
+
 pub fn log_ipc(msg: &str) {
     if std::env::var_os("KC_LOG").is_none() {
         return;
     }
+    let t = LOG_T0.get_or_init(std::time::Instant::now).elapsed().as_millis();
     let path = std::env::current_exe()
         .ok()
         .and_then(|p| p.parent().map(|d| d.join("keyclicker.log")))
         .unwrap_or_else(|| PathBuf::from("keyclicker.log"));
     if let Ok(mut f) = std::fs::OpenOptions::new().create(true).append(true).open(path) {
-        let _ = writeln!(f, "{msg}");
+        let _ = writeln!(f, "[{t:>5}ms] {msg}");
     }
 }
 
@@ -317,6 +322,9 @@ fn handle_ipc(
 
     let data = match cmd {
         "app.ready" => {
+            // 前端首屏脚本已执行完：此时再显示窗口，避免白屏
+            let _ = proxy.send_event(UserEvent::ShowWindow);
+            log_ipc("first paint ready");
             let st = state.borrow();
             json!({
                 "version": "0.3.0",
@@ -593,6 +601,7 @@ fn handle_ipc(
 }
 
 fn main() -> wry::Result<()> {
+    let _ = LOG_T0.set(std::time::Instant::now());
     unsafe {
         let _ = SetCurrentProcessExplicitAppUserModelID(windows::core::w!("KeyClicker.Desktop"));
     }
@@ -619,6 +628,7 @@ fn main() -> wry::Result<()> {
         .with_window_icon(load_window_icon())
         .with_title("KeyClicker")
         .with_decorations(false)
+        .with_visible(false)
         .with_min_inner_size(tao::dpi::LogicalSize::new(720.0, 520.0))
         .with_inner_size(tao::dpi::LogicalSize::new(900.0, 640.0))
         .with_maximizable(false)
@@ -776,7 +786,18 @@ fn main() -> wry::Result<()> {
         }
     };
 
+    log_ipc("webview built");
     *holder.borrow_mut() = Some(webview);
+
+    // 兜底：前端脚本异常时也要把窗口显示出来，避免窗口一直不可见
+    {
+        let proxy_show = proxy.clone();
+        std::thread::spawn(move || {
+            std::thread::sleep(std::time::Duration::from_millis(2500));
+            let _ = proxy_show.send_event(UserEvent::ShowWindow);
+        });
+    }
+
     let holder_run = holder.clone();
     let state_run = app_state.clone();
     let recording_run = recording.clone();
@@ -831,6 +852,13 @@ fn main() -> wry::Result<()> {
             Event::UserEvent(UserEvent::TrayShow) => {
                 window.set_visible(true);
                 window.set_focus();
+            }
+            Event::UserEvent(UserEvent::ShowWindow) => {
+                if !window.is_visible() {
+                    window.set_visible(true);
+                    window.set_focus();
+                    log_ipc("window shown");
+                }
             }
             Event::UserEvent(UserEvent::Maximize) => {
                 window.set_maximized(!window.is_maximized());
