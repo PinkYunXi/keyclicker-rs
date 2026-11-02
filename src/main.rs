@@ -322,9 +322,8 @@ fn handle_ipc(
 
     let data = match cmd {
         "app.ready" => {
-            // 前端首屏脚本已执行完：此时再显示窗口，避免白屏
-            let _ = proxy.send_event(UserEvent::ShowWindow);
-            log_ipc("first paint ready");
+            // 注意：这里前端只是初始化完成，还没渲染；窗口显示等 ui.firstFrame
+            log_ipc("app ready");
             let st = state.borrow();
             json!({
                 "version": "0.3.0",
@@ -336,6 +335,12 @@ fn handle_ipc(
                 "configPath": st.config_path.to_string_lossy(),
             })
         }
+        "ui.firstFrame" => {
+            // 前端首屏已绘制（跨两帧）：此时显示窗口，用户看到的第一眼就是完整界面
+            log_ipc("first frame");
+            let _ = proxy.send_event(UserEvent::ShowWindow);
+            json!({ "ok": true })
+        }
         "config.get" => serde_json::to_value(&state.borrow().config).unwrap_or(Value::Null),
         "config.set" => {
             let mut st = state.borrow_mut();
@@ -345,7 +350,8 @@ fn handle_ipc(
                         // 前端只负责主题 / 页面 / 选中页。
                         // 热键、关闭行为、删除确认等设置项由设置面板单独写盘，
                         // 不能被 UI 的旧快照整体覆盖（否则会出现「设置有时候没保存」）。
-                        st.config.theme = incoming.theme;
+                        st.config.theme = incoming.theme.clone();
+                        hotkeys::set_bg_color(resolve_theme(&incoming.theme) == "dark");
                         st.config.pages = incoming.pages;
                         let sel = cfg_val
                             .get("selectedPage")
@@ -392,6 +398,7 @@ fn handle_ipc(
             let theme = req.pointer("/args/theme").and_then(|v| v.as_str()).unwrap_or("dark").to_string();
             let mut st = state.borrow_mut();
             st.config.theme = theme.clone();
+            hotkeys::set_bg_color(resolve_theme(&theme) == "dark");
             let _ = config::save_config_atomic(&st.config_path, &st.config);
             json!({ "theme": resolve_theme(&theme) })
         }
@@ -661,6 +668,7 @@ fn main() -> wry::Result<()> {
     let config_path = config::resolve_config_path();
     log_ipc(&format!("config: {}", config_path.display()));
     let mut loaded = config::load_config(&config_path);
+    hotkeys::set_bg_color(resolve_theme(&loaded.theme) == "dark");
 
     // 任务引擎：事件通过 channel -> 事件循环
     let (task_tx, task_rx) = std::sync::mpsc::channel::<String>();

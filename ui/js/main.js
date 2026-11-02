@@ -617,6 +617,8 @@
       runtime.booted = true;
       document.documentElement.setAttribute('data-kc-ready', '1');
       emitBus('app:ready', { info: runtime.appInfo });
+      // 跨两帧再通知宿主：确保首屏已经绘制到屏幕上，避免显示瞬间的白屏
+      notifyFirstFrame();
       return KC.app;
     }).catch(function (err) {
       runtime.bootError = err;
@@ -627,6 +629,31 @@
     // 避免无人 await whenReady() 时出现 unhandledrejection（错误已由 UI 呈现）
     bootPromise.catch(function () { /* 已处理 */ });
     return bootPromise;
+  }
+
+  // 首屏渲染完成后通知宿主显示窗口（rAF 双帧 = 已进入绘制队列并完成）
+  function notifyFirstFrame() {
+    var done = false;
+    var fire = function () {
+      if (done) return;
+      done = true;
+      try {
+        var p = KC.host.call('ui.firstFrame', {});
+        if (p && typeof p.catch === 'function') p.catch(function () { /* 旧宿主没有该命令时忽略 */ });
+      } catch (e) { /* 忽略 */ }
+    };
+    try {
+      if (global.requestAnimationFrame) {
+        global.requestAnimationFrame(function () {
+          global.requestAnimationFrame(fire);
+        });
+        global.setTimeout(fire, 300); // 兜底：rAF 异常时也要通知
+      } else {
+        global.setTimeout(fire, 0);
+      }
+    } catch (e) {
+      fire();
+    }
   }
 
   function whenReady() {

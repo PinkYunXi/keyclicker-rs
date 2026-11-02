@@ -2,7 +2,8 @@
 use std::sync::atomic::{AtomicBool, AtomicIsize, AtomicU32, AtomicU64, Ordering};
 use std::sync::OnceLock;
 
-use windows::Win32::Foundation::{HWND, LPARAM, LRESULT, POINT, WPARAM};
+use windows::Win32::Foundation::{COLORREF, HWND, LPARAM, LRESULT, POINT, RECT, WPARAM};
+use windows::Win32::Graphics::Gdi::{CreateSolidBrush, DeleteObject, FillRect, HDC, HGDIOBJ};
 use core::ffi::c_void;
 use windows::Win32::UI::Input::KeyboardAndMouse::{
     GetAsyncKeyState, RegisterHotKey, UnregisterHotKey, HOT_KEY_MODIFIERS, MOD_ALT, MOD_CONTROL,
@@ -10,8 +11,9 @@ use windows::Win32::UI::Input::KeyboardAndMouse::{
 };
 use windows::Win32::UI::HiDpi::GetDpiForWindow;
 use windows::Win32::UI::WindowsAndMessaging::{
-    CallWindowProcW, DefWindowProcW, SetWindowLongPtrW, GWLP_WNDPROC, MINMAXINFO, SC_MAXIMIZE,
-    WM_GETMINMAXINFO, WM_HOTKEY, WM_LBUTTONDBLCLK, WM_LBUTTONUP, WM_RBUTTONUP, WM_SYSCOMMAND, WNDPROC,
+    CallWindowProcW, DefWindowProcW, GetClientRect, SetWindowLongPtrW, GWLP_WNDPROC, MINMAXINFO,
+    SC_MAXIMIZE, WM_ERASEBKGND, WM_GETMINMAXINFO, WM_HOTKEY, WM_LBUTTONDBLCLK, WM_LBUTTONUP,
+    WM_RBUTTONUP, WM_SYSCOMMAND, WNDPROC,
 };
 
 /// 窗口最大尺寸（逻辑像素）：超过后可能出现排布异常，直接锁死上限
@@ -22,6 +24,15 @@ pub const ID_TOGGLE: i32 = 101;
 pub const ID_PANIC: i32 = 102;
 
 static ORIG: AtomicIsize = AtomicIsize::new(0);
+
+/// 窗口擦背景用的颜色（COLORREF = 0x00BBGGRR），跟随主题：
+/// dark = #1c1d1f，light = #f1f2f4（与 ui/css/tokens.css 的 --bg-solid 一致）
+static BG_COLOR: AtomicU32 = AtomicU32::new(0x001F_1D1C);
+
+/// 主题变化时同步窗口背景色，保证任何重绘瞬间的底色都与主题一致
+pub fn set_bg_color(dark: bool) {
+    BG_COLOR.store(if dark { 0x001F_1D1C } else { 0x00F4_F2F1 }, Ordering::Relaxed);
+}
 
 /// 长按热键时 Windows 会持续派发 WM_HOTKEY（MOD_NOREPEAT 对按住自动重复无效），
 /// 且重复延迟可能长达 1 秒。因此用「按住锁」：触发一次后一直忽略，
@@ -103,6 +114,18 @@ unsafe extern "system" fn hotkey_proc(hwnd: HWND, msg: u32, wp: WPARAM, lp: LPAR
                 }
             });
         }
+    }
+    // 深色背景：窗口显示瞬间（页面还没画出来时）不出现白底
+    if msg == WM_ERASEBKGND {
+        unsafe {
+            let hdc = HDC(wp.0 as *mut core::ffi::c_void);
+            let brush = CreateSolidBrush(COLORREF(BG_COLOR.load(Ordering::Relaxed)));
+            let mut rc = RECT::default();
+            let _ = GetClientRect(hwnd, &mut rc);
+            FillRect(hdc, &rc, brush);
+            let _ = DeleteObject(HGDIOBJ(brush.0));
+        }
+        return LRESULT(1);
     }
     // 禁用最大化：系统菜单 / 双击标题栏 / Win+↑ 都会被这里挡掉
     if msg == WM_SYSCOMMAND && (wp.0 as u32 & 0xFFF0) == SC_MAXIMIZE {
