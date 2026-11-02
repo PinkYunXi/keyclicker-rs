@@ -736,12 +736,26 @@ fn main() -> wry::Result<()> {
     let _ = std::fs::create_dir_all(&webview_data);
     log_ipc(&format!("webview data: {}", webview_data.display()));
 
+    // WebView2 内核会攒下大量与本程序无关的组件缓存（DRM、组件更新包、广告过滤规则），
+    // 合计可达 50MB+；启动时顺手清掉，只保留渲染必需的那几个目录。
+    let profile = webview_data.join("EBWebView");
+    for name in ["WidevineCdm", "Subresource Filter", "component_crx_cache", "extensions_crx_cache"] {
+        let _ = std::fs::remove_dir_all(profile.join(name));
+    }
+
     let mut web_context = wry::WebContext::new(Some(webview_data.clone()));
     let webview = WebViewBuilder::new_with_web_context(&mut web_context)
         .with_url(&url)
         .with_devtools(true)
         .with_browser_accelerator_keys(false)
         .with_default_context_menus(false)
+        // 本地自绘 UI 用不到 DRM / 组件更新 / 云同步 / 崩溃上报，关掉以免往用户目录写缓存
+        .with_additional_browser_args(
+            "--disable-component-update --disable-background-networking --disable-sync \
+             --disable-breakpad --disable-crash-reporter --disable-domain-reliability \
+             --no-first-run --no-default-browser-check --disk-cache-size=1 \
+             --disable-gpu-shader-disk-cache --disable-gpu-program-cache",
+        )
         .with_initialization_script(SHIM)
         .with_ipc_handler(move |req| handle_ipc(req.body(), &proxy_ipc, &holder_ipc, &state_ipc, &tasks_ipc, &recording_ipc))
         .build(&window);

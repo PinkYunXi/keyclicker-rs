@@ -1,6 +1,6 @@
 [package]
 name = "keyclicker-rs"
-version = "0.9.4-beta"
+version = "0.9.5-beta"
 edition = "2021"
 
 [build-dependencies]
