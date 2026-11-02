@@ -334,10 +334,18 @@ fn worker_loop(inner: Arc<Mutex<Inner>>, wake: Arc<(Mutex<u64>, Condvar)>, emitt
                 if e.state != TaskState::Running || e.next_due > now {
                     continue;
                 }
-                due.push((e.id.clone(), e.spec.clone(), e.page));
                 if e.spec.kind == "timer" {
+                    // 定时序列：倒计时每秒减一，减到 0 才执行一次按键序列；
+                    // 序列执行结束后由 fire_timer 重新开始计时
+                    if e.remaining > 0 {
+                        e.remaining -= 1;
+                    }
+                    if e.remaining <= 0 {
+                        due.push((e.id.clone(), e.spec.clone(), e.page));
+                    }
                     e.next_due = now + Duration::from_millis(1000);
                 } else {
+                    due.push((e.id.clone(), e.spec.clone(), e.page));
                     let step = Duration::from_millis(e.spec.interval.clamp(16, 3_600_000) as u64);
                     e.next_due += step;
                     if e.next_due <= now {
@@ -439,7 +447,9 @@ fn fire_timer(inner: &Arc<Mutex<Inner>>, emitter: &Arc<dyn Fn(String) + Send + S
     } else {
         e.window_blocked = !allowed;
     }
+    // 序列执行结束后重新开始倒计时
     e.remaining = e.total_secs;
+    e.next_due = Instant::now() + Duration::from_millis(1000);
     drop(g);
     let _ = emitter;
 }
