@@ -68,24 +68,47 @@ struct AppState {
     hwnd: isize,
 }
 
-/// 单实例：已存在同名 Mutex 则提示并返回 false
+/// 单实例：已有实例在运行时，把它的主窗口拉到前台，然后本实例静默退出
 fn ensure_single_instance() -> bool {
     unsafe {
         let m = windows::Win32::System::Threading::CreateMutexW(None, true, windows::core::w!("KeyClicker.SingleInstance"));
         if let Ok(h) = m {
             if windows::Win32::Foundation::GetLastError() == windows::Win32::Foundation::ERROR_ALREADY_EXISTS {
-                let _ = windows::Win32::UI::WindowsAndMessaging::MessageBoxW(
-                    None,
-                    windows::core::w!("KeyClicker 已在运行"),
-                    windows::core::w!("KeyClicker"),
-                    windows::Win32::UI::WindowsAndMessaging::MB_OK | windows::Win32::UI::WindowsAndMessaging::MB_ICONINFORMATION,
-                );
+                activate_existing_window();
                 let _ = h;
                 return false;
             }
             std::mem::forget(h);
         }
         true
+    }
+}
+
+/// 通过窗口消息让已运行的实例自己显示并聚焦（外部 ShowWindow 会与 tao 内部状态不一致）
+fn activate_existing_window() {
+    use windows::Win32::Foundation::{LPARAM, WPARAM};
+    use windows::Win32::UI::WindowsAndMessaging::{
+        AllowSetForegroundWindow, FindWindowW, GetWindowThreadProcessId, PostMessageW,
+    };
+    unsafe {
+        // 首个实例可能还在创建窗口，最多等 3 秒
+        for _ in 0..30 {
+            if let Ok(hwnd) = FindWindowW(windows::core::w!("Window Class"), windows::core::w!("KeyClicker")) {
+                if !hwnd.0.is_null() {
+                    // 本实例是用户刚启动的，有前台权限：把它转授给老实例，否则老实例抢不到前台
+                    let mut pid = 0u32;
+                    GetWindowThreadProcessId(hwnd, Some(&mut pid));
+                    if pid != 0 {
+                        let _ = AllowSetForegroundWindow(pid);
+                    }
+                    log_ipc("second instance: ask running instance to show");
+                    let _ = PostMessageW(Some(hwnd), crate::tray::WM_APP_SHOW, WPARAM(0), LPARAM(0));
+                    return;
+                }
+            }
+            std::thread::sleep(std::time::Duration::from_millis(100));
+        }
+        log_ipc("second instance: running window not found");
     }
 }
 
@@ -858,6 +881,9 @@ fn main() -> wry::Result<()> {
                 log_ipc("window hidden to tray");
             }
             Event::UserEvent(UserEvent::TrayShow) => {
+                if window.is_minimized() {
+                    window.set_minimized(false);
+                }
                 window.set_visible(true);
                 window.set_focus();
             }

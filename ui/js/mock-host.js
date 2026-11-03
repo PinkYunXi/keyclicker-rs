@@ -105,7 +105,8 @@
     var t = {
       type: type,
       windowMatch: typeof raw.windowMatch === 'string' ? raw.windowMatch : '',
-      windowMode: ['contains', 'exact', 'regex'].indexOf(raw.windowMode) >= 0 ? raw.windowMode : 'contains'
+      windowMode: ['contains', 'exact', 'regex'].indexOf(raw.windowMode) >= 0 ? raw.windowMode : 'contains',
+      repeat: Math.max(0, parseInt(raw.repeat, 10) || 0)
     };
     if (type === 'click') {
       t.keys = typeof raw.keys === 'string' && raw.keys.trim() ? raw.keys.trim() : 'a';

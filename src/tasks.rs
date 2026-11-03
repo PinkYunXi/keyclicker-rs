@@ -38,6 +38,10 @@ struct Entry {
     next_due: Instant,
     total_secs: i32,
     fired: bool,
+    /// 达到循环次数后自动停止并标记完成（重新开始会清掉）
+    finished: bool,
+    /// 本次启动后的第一次发送：先等热键的修饰键松开，避免第一个按键变成组合键
+    first_send: bool,
 }
 
 struct Inner {
@@ -111,6 +115,8 @@ impl TaskManager {
             next_due: Instant::now() + Duration::from_millis(interval),
             total_secs,
             fired: false,
+            finished: false,
+            first_send: true,
         });
         drop(g);
         self.signal();
@@ -137,6 +143,8 @@ impl TaskManager {
             if reset_count {
                 e.count = 0;
                 e.remaining = if e.spec.kind == "timer" { e.total_secs } else { 0 };
+                e.finished = false;
+                e.first_send = true;
             }
             if state == TaskState::Running {
                 let ms = if e.spec.kind == "timer" {
@@ -256,22 +264,7 @@ impl TaskManager {
 
     pub fn snapshot_json(&self) -> serde_json::Value {
         let g = self.inner.lock().unwrap();
-        let tasks: Vec<serde_json::Value> = g
-            .entries
-            .iter()
-            .map(|e| {
-                json!({
-                    "id": e.id,
-                    "pageIndex": e.page,
-                    "type": e.spec.kind,
-                    "state": e.state.as_str(),
-                    "count": e.count,
-                    "remaining": e.remaining,
-                    "windowBlocked": e.window_blocked,
-                })
-            })
-            .collect();
-        json!({ "tasks": tasks })
+        snapshot(&g)
     }
 
     pub fn emit_now(&self) {
@@ -368,33 +361,64 @@ fn worker_loop(inner: Arc<Mutex<Inner>>, wake: Arc<(Mutex<u64>, Condvar)>, emitt
         let mut g = inner.lock().unwrap();
         if g.last_stats.elapsed() >= Duration::from_millis(100) {
             g.last_stats = Instant::now();
-            let snap = {
-                let tasks: Vec<serde_json::Value> = g
-                    .entries
-                    .iter()
-                    .map(|e| {
-                        json!({
-                            "id": e.id,
-                            "pageIndex": e.page,
-                            "type": e.spec.kind,
-                            "state": e.state.as_str(),
-                            "count": e.count,
-                            "remaining": e.remaining,
-                            "windowBlocked": e.window_blocked,
-                        })
-                    })
-                    .collect();
-                json!({ "tasks": tasks })
-            };
+            let snap = snapshot(&g);
             drop(g);
             (emitter)(json!({ "event": "task.stats", "data": snap }).to_string());
         }
     }
 }
 
+/// 任务统计快照（stats 推送与 task.list 共用）
+fn snapshot(g: &Inner) -> serde_json::Value {
+    let tasks: Vec<serde_json::Value> = g
+        .entries
+        .iter()
+        .map(|e| {
+            json!({
+                "id": e.id,
+                "pageIndex": e.page,
+                "type": e.spec.kind,
+                "state": e.state.as_str(),
+                "count": e.count,
+                "remaining": e.remaining,
+                "windowBlocked": e.window_blocked,
+                "repeat": e.spec.repeat,
+                "finished": e.finished,
+            })
+        })
+        .collect();
+    json!({ "tasks": tasks })
+}
+
+/// 立即推一次统计：任务因循环次数跑完自动停止时，调度循环会进入空闲不再推送，
+/// 若不主动推一次，界面会一直停在「运行中」和旧的次数上。
+fn emit_stats_now(inner: &Arc<Mutex<Inner>>, emitter: &Arc<dyn Fn(String) + Send + Sync>) {
+    let snap = {
+        let g = inner.lock().unwrap();
+        snapshot(&g)
+    };
+    (emitter)(json!({ "event": "task.stats", "data": snap }).to_string());
+}
+
+/// 取出并清除「本次启动后的第一次发送」标记
+fn take_first_send(inner: &Arc<Mutex<Inner>>, id: &str) -> bool {
+    let mut g = inner.lock().unwrap();
+    match g.entries.iter_mut().find(|e| e.id == id) {
+        Some(e) if e.first_send => {
+            e.first_send = false;
+            true
+        }
+        _ => false,
+    }
+}
+
 fn fire_click(inner: &Arc<Mutex<Inner>>, emitter: &Arc<dyn Fn(String) + Send + Sync>, id: &str, spec: &TaskSpec) {
+    if take_first_send(inner, id) {
+        input::wait_modifiers_released(500);
+    }
     let allowed = winmatch::window_allows(&spec.window_match, &spec.window_mode);
     let sent = allowed && input::send_combo_str(&spec.keys, keys::hold_ms_for_interval(spec.interval));
+    let mut done = false;
     {
         let mut g = inner.lock().unwrap();
         let Some(e) = g.entries.iter_mut().find(|e| e.id == id) else {
@@ -408,9 +432,18 @@ fn fire_click(inner: &Arc<Mutex<Inner>>, emitter: &Arc<dyn Fn(String) + Send + S
         } else if sent {
             e.count += 1;
             e.window_blocked = false;
+            // 达到指定循环次数：自动停止并标记完成
+            if e.spec.repeat > 0 && e.count >= e.spec.repeat as u64 {
+                e.state = TaskState::Idle;
+                e.finished = true;
+                done = true;
+            }
         } else {
             e.window_blocked = false;
         }
+    }
+    if done {
+        emit_stats_now(inner, emitter);
     }
     if !sent && allowed {
         (emitter)(
@@ -421,6 +454,9 @@ fn fire_click(inner: &Arc<Mutex<Inner>>, emitter: &Arc<dyn Fn(String) + Send + S
 }
 
 fn fire_timer(inner: &Arc<Mutex<Inner>>, emitter: &Arc<dyn Fn(String) + Send + Sync>, id: &str, spec: &TaskSpec) {
+    if take_first_send(inner, id) {
+        input::wait_modifiers_released(500);
+    }
     let allowed = winmatch::window_allows(&spec.window_match, &spec.window_mode);
     let mut fired = false;
     if allowed {
@@ -441,9 +477,16 @@ fn fire_timer(inner: &Arc<Mutex<Inner>>, emitter: &Arc<dyn Fn(String) + Send + S
     if e.state != TaskState::Running {
         return;
     }
+    let mut done = false;
     if allowed && fired {
         e.count += 1;
         e.window_blocked = false;
+        // 达到指定循环次数：自动停止并标记完成
+        if e.spec.repeat > 0 && e.count >= e.spec.repeat as u64 {
+            e.state = TaskState::Idle;
+            e.finished = true;
+            done = true;
+        }
     } else {
         e.window_blocked = !allowed;
     }
@@ -451,5 +494,7 @@ fn fire_timer(inner: &Arc<Mutex<Inner>>, emitter: &Arc<dyn Fn(String) + Send + S
     e.remaining = e.total_secs;
     e.next_due = Instant::now() + Duration::from_millis(1000);
     drop(g);
-    let _ = emitter;
+    if done {
+        emit_stats_now(inner, emitter);
+    }
 }

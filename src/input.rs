@@ -1,8 +1,10 @@
 // SendInput 发送引擎（扫描码模式，与旧版 keyboard 库一致）
 use windows::Win32::UI::Input::KeyboardAndMouse::{
-    MapVirtualKeyW, SendInput, INPUT, INPUT_0, INPUT_KEYBOARD, KEYBDINPUT, KEYEVENTF_EXTENDEDKEY,
-    KEYEVENTF_KEYUP, KEYEVENTF_SCANCODE, MAPVK_VK_TO_VSC, VIRTUAL_KEY,
+    GetAsyncKeyState, MapVirtualKeyW, SendInput, INPUT, INPUT_0, INPUT_KEYBOARD, KEYBDINPUT,
+    KEYEVENTF_EXTENDEDKEY, KEYEVENTF_KEYUP, KEYEVENTF_SCANCODE, MAPVK_VK_TO_VSC, VIRTUAL_KEY,
+    VK_CONTROL, VK_LWIN, VK_MENU, VK_RWIN, VK_SHIFT,
 };
+use std::time::{Duration, Instant};
 
 fn is_extended(vk: u16) -> bool {
     matches!(
@@ -56,6 +58,26 @@ pub fn send_combo(vks: &[u16], hold_ms: i32) -> bool {
     let ups: Vec<INPUT> = valid.iter().rev().filter_map(|v| make_input(*v, false)).collect();
     let sent_up = unsafe { SendInput(&ups, std::mem::size_of::<INPUT>() as i32) };
     sent_up as usize == valid.len()
+}
+
+/// 是否有修饰键（Alt/Ctrl/Shift/Win）正被按住
+fn modifiers_held() -> bool {
+    let down = |vk: windows::Win32::UI::Input::KeyboardAndMouse::VIRTUAL_KEY| unsafe {
+        (GetAsyncKeyState(vk.0 as i32) as u16 & 0x8000) != 0
+    };
+    down(VK_MENU) || down(VK_CONTROL) || down(VK_SHIFT) || down(VK_LWIN) || down(VK_RWIN)
+}
+
+/// 等用户松开热键的修饰键再发按键。
+/// 否则第一次发送会变成 Alt+1 / Ctrl+A 这类组合，目标输入框会少一个字符。
+pub fn wait_modifiers_released(timeout_ms: u64) {
+    if !modifiers_held() {
+        return;
+    }
+    let start = Instant::now();
+    while modifiers_held() && start.elapsed() < Duration::from_millis(timeout_ms) {
+        std::thread::sleep(Duration::from_millis(8));
+    }
 }
 
 pub fn send_combo_str(combo: &str, hold_ms: i32) -> bool {

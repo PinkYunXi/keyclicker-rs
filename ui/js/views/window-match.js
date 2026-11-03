@@ -93,7 +93,7 @@
     var input = h('input', { class: 'input kct-wm-input' });
     input.type = 'text';
     input.value = value;
-    input.placeholder = '留空 = 不限制；点开右侧箭头选窗口，也可直接输入关键词';
+    input.placeholder = '输入窗口标题关键词，留空 = 不限制';
     input.spellcheck = false;
     input.setAttribute('aria-label', '窗口标题匹配关键词');
 
@@ -132,8 +132,7 @@
     var row = h('div', { class: 'kct-wm-row' }, [field, select, grabBtn]);
 
     var head = h('div', { class: 'kct-wm-head' }, [
-      h('span', { class: 'field-label kct-wm-label', text: '仅在前台窗口匹配时生效' }),
-      h('span', { class: 'field-hint kct-wm-tip', text: '留空 = 不限制' })
+      h('span', { class: 'field-label kct-wm-label', text: '仅在前台窗口匹配时生效' })
     ]);
 
     var root = h('div', { class: 'kct-wm' }, [head, row, hint]);
@@ -149,13 +148,12 @@
     }
 
     function updateHint() {
-      var base = '留空表示不限制。';
       var desc = mode === 'exact'
-        ? '精确：窗口标题与关键词完全一致才触发。'
+        ? '精确：标题与关键词完全一致才触发'
         : mode === 'regex'
-          ? '正则：按正则表达式匹配标题（忽略大小写），非法表达式会被拒绝。'
-          : '包含：窗口标题包含关键词即触发。';
-      hint.textContent = desc + base + '任务运行中窗口不匹配时不会发送按键，任务行会给出提示。';
+          ? '正则：按表达式匹配标题（忽略大小写）'
+          : '包含：标题含关键词即触发';
+      hint.textContent = desc;
       hint.dataset.mode = mode;
     }
 

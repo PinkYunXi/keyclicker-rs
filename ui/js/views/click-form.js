@@ -15,6 +15,7 @@
 
   var MIN_INTERVAL = 16;
   var MAX_INTERVAL = 3600000;
+  var MAX_REPEAT = 1000000;
 
   function h(tag, attrs, kids) {
     return KC.dom.h(tag, attrs, kids);
@@ -110,7 +111,7 @@
     recBtn.title = '按下要连点的按键（支持组合键），无需手动输入';
     recBtn.setAttribute('aria-pressed', 'false');
 
-    var keyHint = h('div', { class: 'field-hint kct-key-hint', text: '点「录入」后直接按下键盘按键（支持组合键），按 Esc 取消。' });
+    var keyHint = h('div', { class: 'field-hint kct-key-hint', text: '点「录入」直接按键，Esc 取消' });
     var keyError = h('div', { class: 'field-error kct-key-error' });
     keyError.hidden = true;
 
@@ -136,8 +137,25 @@
 
     var intervalField = h('div', { class: 'kct-field kct-field-interval' }, [
       h('span', { class: 'field-label kct-field-label', text: '间隔' }),
-      h('div', { class: 'kct-inline' }, [intervalInput, h('span', { class: 'kct-unit', text: 'ms' }), intervalHint]),
+      h('div', { class: 'kct-inline' }, [intervalInput, h('span', { class: 'kct-unit', text: 'ms' })]),
+      intervalHint,
       intervalError
+    ]);
+
+    /* 循环次数（0 或留空 = 无限） */
+    var repeatInput = h('input', { class: 'input kct-num kct-repeat-input' });
+    repeatInput.type = 'number';
+    repeatInput.min = '0';
+    repeatInput.max = String(MAX_REPEAT);
+    repeatInput.step = '1';
+    repeatInput.value = '0';
+    repeatInput.placeholder = '0 = 无限';
+    repeatInput.setAttribute('aria-label', '循环次数，0 或留空表示无限循环');
+
+    var repeatField = h('div', { class: 'kct-field kct-field-repeat' }, [
+      h('span', { class: 'field-label kct-field-label', text: '循环次数' }),
+      h('div', { class: 'kct-inline' }, [repeatInput, h('span', { class: 'kct-unit', text: '次' })]),
+      h('div', { class: 'field-hint', text: '0 或留空 = 无限' })
     ]);
 
     /* 窗口匹配（可编辑下拉 + 模式 + 抓取） */
@@ -162,7 +180,7 @@
         ]),
         h('span', { class: 'kct-type-ico kct-type-ico-click', html: svg('<rect x="2.4" y="4.4" width="11.2" height="7.2" rx="1.6"/><path d="M5.4 8h5.2"/>') })
       ]),
-      h('div', { class: 'card-body kct-card-body' }, [keyField, intervalField, wm, actions])
+      h('div', { class: 'card-body kct-card-body' }, [keyField, intervalField, repeatField, wm, actions])
     ]);
 
     /* ── 错误提示 ── */
@@ -212,6 +230,16 @@
       return value;
     }
 
+    /* ── 循环次数：空或 0 = 无限 ── */
+    function parseRepeat() {
+      var raw = String(repeatInput.value == null ? '' : repeatInput.value).trim();
+      if (!raw) return 0;
+      if (!/^\d+$/.test(raw)) return 0;
+      var value = parseInt(raw, 10);
+      if (!isFinite(value) || value < 0) return 0;
+      return Math.min(value, MAX_REPEAT);
+    }
+
     function checkIntervalLive() {
       var raw = String(intervalInput.value == null ? '' : intervalInput.value).trim();
       if (!raw) { clearIntervalError(); return; }
@@ -234,8 +262,8 @@
       recBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
       keyInput.readOnly = on;
       keyHint.textContent = on
-        ? '正在录入：请按下要连点的按键（支持组合键），按 Esc 取消'
-        : '点「录入」后直接按下键盘按键（支持组合键），按 Esc 取消。';
+        ? '正在录入：按下按键，Esc 取消'
+        : '点「录入」直接按键，Esc 取消';
     }
 
     async function stopRecord(cancel) {
@@ -316,7 +344,8 @@
           keys: keys,
           interval: interval,
           windowMatch: wmValue,
-          windowMode: wmMode
+          windowMode: wmMode,
+          repeat: parseRepeat()
         };
 
         keyInput.value = keys;

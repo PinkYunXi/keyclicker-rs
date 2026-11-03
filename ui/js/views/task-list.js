@@ -196,6 +196,7 @@
       var state = item.rt ? item.rt.state : 'idle';
       if (state === 'running') return { key: 'running', text: '● 运行', cls: 'badge success' };
       if (state === 'paused') return { key: 'paused', text: '● 暂停', cls: 'badge warn' };
+      if (item.rt && item.rt.finished) return { key: 'done', text: '✔ 完成', cls: 'badge success' };
       return { key: 'idle', text: '○ 停止', cls: 'badge' };
     }
 
@@ -208,13 +209,18 @@
       return String(spec.keys == null ? '' : spec.keys) || '(未设置按键)';
     }
 
+    function repeatText(spec) {
+      var n = Math.max(0, Math.floor(Number(spec && spec.repeat) || 0));
+      return n > 0 ? ('循环 ' + fmtNum(n) + ' 次') : '无限';
+    }
+
     function specInfo(item) {
       var spec = item.spec || {};
       if (spec.type === 'timer') {
         var total = (Number(spec.minutes) || 0) * 60 + (Number(spec.seconds) || 0);
-        return clockText(total) + ' 触发 · 间隔 ' + (Number(spec.gap) || 0) + ' ms';
+        return clockText(total) + ' 触发 · 间隔 ' + (Number(spec.gap) || 0) + ' ms · ' + repeatText(spec);
       }
-      return '间隔 ' + (Number(spec.interval) || 0) + ' ms';
+      return '间隔 ' + (Number(spec.interval) || 0) + ' ms · ' + repeatText(spec);
     }
 
     /* ── 行构建 ── */
@@ -339,7 +345,7 @@
       if (pattern) {
         var label = MODE_LABELS[spec.windowMode] || '包含';
         if (blocked) {
-          setText(row.winEl, '窗口不匹配（当前前台窗口未命中，按键未发送）', row, 'win');
+          setText(row.winEl, '窗口不匹配，未发送按键', row, 'win');
           row.winEl.title = '窗口' + label + '：' + pattern;
         } else {
           setText(row.winEl, '窗口' + label + '：' + pattern, row, 'win');
@@ -354,13 +360,15 @@
 
       // 统计
       var count = Number(rt ? rt.count : 0) || 0;
+      var repeat = Math.max(0, Math.floor(Number(spec.repeat) || 0));
+      var countText = repeat > 0 ? (fmtNum(count) + ' / ' + fmtNum(repeat)) : fmtNum(count);
       if (spec.type === 'timer') {
         var left = rt && rt.remaining != null ? rt.remaining : ((Number(spec.minutes) || 0) * 60 + (Number(spec.seconds) || 0));
         setText(row.statMain, clockText(left), row, 'statMain');
-        setText(row.statSub, fmtNum(count) + ' 次', row, 'statSub');
+        setText(row.statSub, countText + ' 次', row, 'statSub');
         row.statMain.title = '本次剩余时间';
       } else {
-        setText(row.statMain, fmtNum(count), row, 'statMain');
+        setText(row.statMain, countText, row, 'statMain');
         setText(row.statSub, '次', row, 'statSub');
         row.statMain.title = '已发送次数';
       }
@@ -369,7 +377,7 @@
       setText(row.badge, status.text, row, 'badge');
       var badgeCls = status.cls + ' kct-task-badge' + (blocked ? ' kct-badge-blocked' : '');
       if (row.badge.className !== badgeCls) row.badge.className = badgeCls;
-      row.badge.title = blocked ? '窗口不匹配：任务在跑但不会发送按键' : status.text;
+      row.badge.title = blocked ? '窗口不匹配：不会发送按键' : status.text;
     }
 
     /* ── 渲染 ── */

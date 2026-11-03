@@ -72,7 +72,9 @@
     var task = {
       type: type,
       windowMatch: typeof raw.windowMatch === 'string' ? raw.windowMatch : '',
-      windowMode: ['contains', 'exact', 'regex'].indexOf(raw.windowMode) >= 0 ? raw.windowMode : 'contains'
+      windowMode: ['contains', 'exact', 'regex'].indexOf(raw.windowMode) >= 0 ? raw.windowMode : 'contains',
+      // 循环次数：0 = 无限；留空/非法值都按无限处理
+      repeat: clampInt(raw.repeat, 0, 0, 1000000)
     };
     if (type === 'click') {
       task.keys = typeof raw.keys === 'string' && raw.keys.trim() ? raw.keys.trim() : 'a';

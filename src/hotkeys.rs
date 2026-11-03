@@ -70,8 +70,20 @@ unsafe extern "system" fn hotkey_proc(hwnd: HWND, msg: u32, wp: WPARAM, lp: LPAR
             }
         }
     }
+    if msg == crate::tray::WM_APP_SHOW {
+        if let Some(tx) = TX.get() {
+            let _ = tx.send(-3); // 与托盘左键一致：显示并聚焦主窗口
+        }
+    }
     if msg == WM_HOTKEY {
         let id = wp.0 as i32;
+        // 防抖：keybd_event / 某些键盘在组合键按下-抬起之间会派发两次 WM_HOTKEY，
+        // 会让任务刚启动就被第二次触发停掉（表现为「运行后立刻停止、不输出」）
+        let now = now_ms();
+        let last = LAST_FIRE_MS.load(Ordering::Relaxed);
+        if now.saturating_sub(last) < 250 {
+            return LRESULT(0);
+        }
         let lock = if id == ID_TOGGLE {
             &LOCK_TOGGLE
         } else if id == ID_PANIC {
@@ -85,7 +97,7 @@ unsafe extern "system" fn hotkey_proc(hwnd: HWND, msg: u32, wp: WPARAM, lp: LPAR
             } else {
                 VK_PANIC.load(Ordering::Relaxed)
             };
-            LAST_FIRE_MS.store(now_ms(), Ordering::Relaxed);
+            LAST_FIRE_MS.store(now, Ordering::Relaxed);
             if let Some(tx) = TX.get() {
                 let _ = tx.send(id);
             }

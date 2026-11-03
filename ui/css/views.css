@@ -91,19 +91,19 @@
   line-height: 1.5;
 }
 
-/* 表单两列：按键（宽）+ 间隔（窄）；窗口匹配与主操作通栏 */
+/* 表单三列：主字段（宽，2 份）+ 间隔 + 循环次数；窗口匹配与主操作通栏 */
 .kct-click-card .kct-card-body,
 .kct-timer-card .kct-card-body {
   display: grid;
-  grid-template-columns: minmax(0, 2.05fr) minmax(0, 1fr);
-  column-gap: var(--space-6);
+  grid-template-columns: minmax(180px, 1fr) auto auto;
+  column-gap: var(--space-4);
   row-gap: var(--space-4);
   align-items: start;
   min-width: 0;
 }
 
 .kct-timer-card .kct-card-body {
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-columns: minmax(180px, 1fr) auto auto;
 }
 
 .kct-card-body > * {
@@ -124,6 +124,11 @@
 .kct-wm,
 .kct-actions {
   grid-column: 1 / -1;
+}
+
+/* 循环次数独立成第三列，与「间隔 / 步骤间隔」并排 */
+.kct-field-repeat {
+  grid-column: 3;
 }
 
 .kct-type-ico {
@@ -189,10 +194,12 @@
   color: var(--text-tertiary);
 }
 
-/* 间隔 / 步骤间隔的说明文字单独占一行，与左列提示对齐 */
+/* 间隔 / 步骤间隔 / 循环次数的说明文字单独占一行；限宽让 auto 列贴合内容 */
 .kct-field-interval .kct-interval-hint,
-.kct-field-gap .kct-inline .field-hint {
+.kct-field-gap .kct-inline .field-hint,
+.kct-field-repeat .field-hint {
   flex: 1 1 100%;
+  max-width: 196px;
 }
 
 .kct-key-row {
@@ -992,8 +999,9 @@
 }
 
 /* ══ 窄窗口适配 ═════════════════════════════════════════════════════ */
-@media (max-width: 700px) {
-  /* 单列：字段不再并排，避免 720 宽时输入框过窄 */
+/* 三列按比例一起收缩，保持同一行；只有低于窗口最小宽度才退回单列 */
+
+@media (max-width: 560px) {
   .kct-click-card .kct-card-body,
   .kct-timer-card .kct-card-body {
     grid-template-columns: minmax(0, 1fr);
@@ -1004,17 +1012,10 @@
   .kct-field-time,
   .kct-field-gap,
   .kct-field-seq,
+  .kct-field-repeat,
   .kct-wm,
   .kct-actions {
     grid-column: 1;
-  }
-
-  .kct-key-input {
-    max-width: none;
-  }
-
-  .kct-wm-field {
-    max-width: none;
   }
 }
 

@@ -45,6 +45,9 @@ pub struct TaskSpec {
     pub window_match: String,
     #[serde(default, alias = "window_mode")]
     pub window_mode: String,
+    /// 循环次数：0 或负数 = 无限循环；达到次数后任务自动停止
+    #[serde(default)]
+    pub repeat: i32,
 }
 
 impl Default for TaskSpec {
@@ -52,7 +55,7 @@ impl Default for TaskSpec {
         Self {
             kind: d_click(), keys: d_keys(), interval: d_interval(),
             seq: vec!["a".into()], minutes: 0, seconds: d_seconds(), gap: d_gap(),
-            window_match: String::new(), window_mode: d_mode(),
+            window_match: String::new(), window_mode: d_mode(), repeat: 0,
         }
     }
 }
@@ -179,6 +182,7 @@ impl Config {
                     "contains" | "exact" | "regex" => {}
                     _ => t.window_mode = d_mode(),
                 }
+                t.repeat = t.repeat.max(0);
             }
         }
         if self.selected_page >= self.pages.len() {

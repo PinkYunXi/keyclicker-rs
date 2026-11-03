@@ -13,6 +13,7 @@
 
   var MIN_INTERVAL = 16;
   var MAX_GAP = 60000;
+  var MAX_REPEAT = 1000000;
 
   function h(tag, attrs, kids) {
     return KC.dom.h(tag, attrs, kids);
@@ -148,12 +149,25 @@
 
     var gapField = h('div', { class: 'kct-field kct-field-gap' }, [
       h('span', { class: 'field-label kct-field-label', text: '步骤间隔' }),
-      h('div', { class: 'kct-inline' }, [
-        gapInput,
-        h('span', { class: 'kct-unit', text: 'ms' }),
-        h('span', { class: 'field-hint', text: '最小 ' + MIN_INTERVAL + ' ms，序列相邻按键之间的停顿' })
-      ]),
+      h('div', { class: 'kct-inline' }, [gapInput, h('span', { class: 'kct-unit', text: 'ms' })]),
+      h('span', { class: 'field-hint', text: '相邻按键的停顿，最小 ' + MIN_INTERVAL + ' ms' }),
       gapError
+    ]);
+
+    /* 循环次数（0 或留空 = 无限） */
+    var repeatInput = h('input', { class: 'input kct-num kct-repeat-input' });
+    repeatInput.type = 'number';
+    repeatInput.min = '0';
+    repeatInput.max = String(MAX_REPEAT);
+    repeatInput.step = '1';
+    repeatInput.value = '0';
+    repeatInput.placeholder = '0 = 无限';
+    repeatInput.setAttribute('aria-label', '循环次数，0 或留空表示无限循环');
+
+    var repeatField = h('div', { class: 'kct-field kct-field-repeat' }, [
+      h('span', { class: 'field-label kct-field-label', text: '循环次数' }),
+      h('div', { class: 'kct-inline' }, [repeatInput, h('span', { class: 'kct-unit', text: '次' })]),
+      h('div', { class: 'field-hint', text: '0 或留空 = 无限' })
     ]);
 
     /* 窗口匹配 */
@@ -176,7 +190,7 @@
         ]),
         h('span', { class: 'kct-type-ico kct-type-ico-timer', html: svg('<circle cx="8" cy="8.6" r="5.1"/><path d="M8 5.8v2.9l1.9 1.1"/><path d="M6.2 1.9h3.6"/>') })
       ]),
-      h('div', { class: 'card-body kct-card-body' }, [seqField, timeField, gapField, wm, h('div', { class: 'kct-actions' }, [addBtn])])
+      h('div', { class: 'card-body kct-card-body' }, [seqField, timeField, gapField, repeatField, wm, h('div', { class: 'kct-actions' }, [addBtn])])
     ]);
 
     /* ── 错误提示 ── */
@@ -274,6 +288,16 @@
       return { minutes: minutes, seconds: seconds };
     }
 
+    /* ── 循环次数：空或 0 = 无限 ── */
+    function parseRepeat() {
+      var raw = String(repeatInput.value == null ? '' : repeatInput.value).trim();
+      if (!raw) return 0;
+      if (!/^\d+$/.test(raw)) return 0;
+      var value = parseInt(raw, 10);
+      if (!isFinite(value) || value < 0) return 0;
+      return Math.min(value, MAX_REPEAT);
+    }
+
     minInput.addEventListener('input', function () { clearError(timeError); });
     secInput.addEventListener('input', function () { clearError(timeError); });
     gapInput.addEventListener('input', function () { clearError(gapError); });
@@ -302,7 +326,8 @@
           seconds: time.seconds,
           gap: gap,
           windowMatch: wmValue,
-          windowMode: wmMode
+          windowMode: wmMode,
+          repeat: parseRepeat()
         };
 
         minInput.value = String(time.minutes);

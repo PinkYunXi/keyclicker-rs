@@ -13,6 +13,8 @@ use windows::Win32::UI::WindowsAndMessaging::{CreateIconFromResourceEx, HICON, L
 };
 
 pub const WM_APP_TRAY: u32 = 0x8000 + 2;
+/// 第二个实例启动时，通知已运行的实例把主窗口拉到前台
+pub const WM_APP_SHOW: u32 = 0x8000 + 3;
 const TRAY_ID: u32 = 1;
 
 /// 防止右键消息排队时重复弹出菜单
