@@ -1,0 +1,243 @@
+/* =============================================================================
+   KeyClicker Next —— 设计令牌 (tokens.css)
+   主题切换：<html data-theme="dark|light">，CSS 变量驱动，零重排。
+   命名：[语义]-[层级]，颜色一律使用 rgba 以便叠加 Mica / 卡片层。
+   ========================================================================== */
+
+:root {
+  /* ---- 字体族 ------------------------------------------------------------ */
+  --font-ui: "Segoe UI Variable Text", "Segoe UI Variable", "Segoe UI",
+             "Microsoft YaHei UI", "Microsoft YaHei", system-ui, sans-serif;
+  --font-display: "Segoe UI Variable Display", "Segoe UI Variable", "Segoe UI",
+                  "Microsoft YaHei UI", system-ui, sans-serif;
+  --font-mono: "Cascadia Mono", "Cascadia Code", Consolas,
+               "Microsoft YaHei UI", monospace;
+
+  /* ---- 字号 / 行高 ------------------------------------------------------- */
+  --fs-caption: 11px;
+  --fs-small: 12px;
+  --fs-body: 13px;
+  --fs-body-lg: 14px;
+  --fs-h2: 15px;
+  --fs-card-title: 16px;
+  --fs-h1: 20px;
+  --fs-title: 20px;      /* 契约 §5 保留名 */
+  --fs-display: 26px;
+  --lh-tight: 1.3;
+  --lh-body: 1.55;
+
+  /* ---- 间距（4px 基线）--------------------------------------------------- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 32px;
+
+  /* ---- 圆角 -------------------------------------------------------------- */
+  --radius-sm: 5px;
+  --radius-control: 6px;
+  --radius-card: 10px;
+  --radius-dialog: 12px;
+  --radius-pill: 999px;
+
+  /* ---- 尺寸 -------------------------------------------------------------- */
+  --titlebar-h: 44px;
+  --pagebar-h: 44px;
+  --statusbar-h: 30px;
+  --win-btn-w: 46px;
+  --control-h: 32px;
+  --control-h-sm: 26px;
+  --control-h-lg: 36px;
+  --view-max: 960px;
+
+  /* ---- 动效 -------------------------------------------------------------- */
+  --dur-fast: 120ms;
+  --dur-med: 160ms;
+  --dur-slow: 240ms;
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+  --ease-out: cubic-bezier(0, 0, 0, 1);
+  --ease-in: cubic-bezier(1, 0, 1, 1);
+  --transition-colors: color var(--dur-fast) var(--ease),
+                       background-color var(--dur-fast) var(--ease),
+                       border-color var(--dur-fast) var(--ease);
+
+  /* ---- 焦点环 ------------------------------------------------------------ */
+  --focus-outline: 2px solid var(--accent);
+  --focus-offset: 2px;
+
+  /* ---- 层级 -------------------------------------------------------------- */
+  --z-pagebar: 10;
+  --z-titlebar: 20;
+  --z-overlay: 1000;
+  --z-dialog: 1001;
+  --z-toast: 1200;
+}
+
+/* =============================================================================
+   深色（默认）
+   ========================================================================== */
+html[data-theme="dark"] {
+  color-scheme: dark;
+
+  /* 底色：--bg-solid 是 Mica 不可用时的纯色兜底，--bg-app 是叠加在 Mica 上的薄层 */
+  --bg-solid: #1c1d1f;
+  --bg-app: rgba(28, 29, 31, 0.62);
+  --bg-layer: rgba(255, 255, 255, 0.028);
+  --bg-card: rgba(255, 255, 255, 0.052);
+  --bg-card-hover: rgba(255, 255, 255, 0.078);
+  --bg-card-pressed: rgba(255, 255, 255, 0.036);
+  --bg-input: rgba(255, 255, 255, 0.062);
+  --bg-input-hover: rgba(255, 255, 255, 0.086);
+  --bg-input-active: rgba(255, 255, 255, 0.036);
+  --bg-input-disabled: rgba(255, 255, 255, 0.042);
+  --bg-flyout: #2a2b2e;
+  --bg-flyout-hover: #323337;
+  --bg-elevated: #2a2b2e;
+  --bg-toast: #2a2b2e;
+
+  /* 描边 */
+  --border: rgba(255, 255, 255, 0.072);
+  --border-strong: rgba(255, 255, 255, 0.118);
+  --border-input: rgba(255, 255, 255, 0.092);
+  --border-accent: rgba(76, 194, 255, 0.55);
+  --divider: rgba(255, 255, 255, 0.078);
+
+  /* 文本 */
+  --text-primary: rgba(255, 255, 255, 0.96);
+  --text-secondary: rgba(255, 255, 255, 0.66);
+  --text-tertiary: rgba(255, 255, 255, 0.43);
+  --text-disabled: rgba(255, 255, 255, 0.3);
+  --text-on-accent: rgba(0, 0, 0, 0.92);
+  --text-link: #6cc7ff;
+
+  /* 强调色 */
+  --accent: #4cc2ff;
+  --accent-hover: #7ad4ff;
+  --accent-pressed: #2fb4f2;
+  --accent-soft: rgba(76, 194, 255, 0.14);
+  --accent-soft-hover: rgba(76, 194, 255, 0.22);
+
+  /* 语义色 */
+  --success: #6ccb5f;
+  --success-soft: rgba(108, 203, 95, 0.14);
+  --warning: #ffd66b;
+  --warning-soft: rgba(255, 214, 107, 0.14);
+  --danger: #ff99a4;
+  --danger-hover: #ffb3bb;
+  --danger-soft: rgba(255, 153, 164, 0.14);
+  --danger-fill: #c42b1c;
+  --danger-fill-hover: #cf2f21;
+  --danger-fill-pressed: #a82318;
+
+  /* 阴影（克制） */
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.16), 0 4px 14px rgba(0, 0, 0, 0.16);
+  --shadow-card-hover: 0 2px 4px rgba(0, 0, 0, 0.2), 0 8px 20px rgba(0, 0, 0, 0.22);
+  --shadow-flyout: 0 10px 32px rgba(0, 0, 0, 0.52), 0 2px 8px rgba(0, 0, 0, 0.34);
+  --shadow-control: inset 0 1px 0 rgba(255, 255, 255, 0.045);
+  --shadow-raised: 0 1px 2px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.16);
+
+  /* Mica 着色层（叠加在透明背景上的一层极淡渐变） */
+  --mica-tint: linear-gradient(158deg, rgba(76, 194, 255, 0.06), rgba(76, 194, 255, 0) 44%),
+               radial-gradient(120% 90% at 96% -12%, rgba(122, 138, 255, 0.06), rgba(122, 138, 255, 0) 62%);
+  --overlay-scrim: rgba(0, 0, 0, 0.5);
+
+  /* 滚动条 */
+  --scrollbar-thumb: rgba(255, 255, 255, 0.22);
+  --scrollbar-thumb-hover: rgba(255, 255, 255, 0.4);
+
+  /* 骨架屏 */
+  --skeleton-base: rgba(255, 255, 255, 0.06);
+  --skeleton-shine: rgba(255, 255, 255, 0.1);
+
+  /* 自绘 select 箭头（内联 SVG data URI，颜色随主题） */
+  --select-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 6.25 8 10.25 12 6.25' fill='none' stroke='%23b4b4b4' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+
+  /* 标题栏 / 页签栏微光 */
+  --titlebar-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  --pagebar-bg: transparent;
+}
+
+/* =============================================================================
+   浅色
+   ========================================================================== */
+html[data-theme="light"] {
+  color-scheme: light;
+
+  /* 干净的冷灰底 + 近白卡片，避免整屏发灰 */
+  --bg-solid: #f1f2f4;
+  --bg-app: rgba(241, 242, 244, 0.82);
+  --bg-layer: rgba(255, 255, 255, 0.5);
+  --bg-card: rgba(255, 255, 255, 0.94);
+  --bg-card-hover: #ffffff;
+  --bg-card-pressed: rgba(245, 246, 248, 0.9);
+  --bg-input: rgba(255, 255, 255, 0.96);
+  --bg-input-hover: #ffffff;
+  --bg-input-active: #ffffff;
+  --bg-input-disabled: rgba(240, 241, 243, 0.6);
+  --bg-flyout: #fbfbfc;
+  --bg-flyout-hover: #f1f2f4;
+  --bg-elevated: #ffffff;
+  --bg-toast: #ffffff;
+
+  --border: rgba(17, 24, 39, 0.08);
+  --border-strong: rgba(17, 24, 39, 0.14);
+  --border-input: rgba(17, 24, 39, 0.11);
+  --border-accent: rgba(0, 103, 192, 0.45);
+  --divider: rgba(17, 24, 39, 0.07);
+
+  --text-primary: rgba(15, 20, 27, 0.92);
+  --text-secondary: rgba(15, 20, 27, 0.62);
+  --text-tertiary: rgba(15, 20, 27, 0.44);
+  --text-disabled: rgba(15, 20, 27, 0.3);
+  --text-on-accent: #ffffff;
+  --text-link: #0067c0;
+
+  --accent: #0067c0;
+  --accent-hover: #157cc9;
+  --accent-pressed: #005ba1;
+  --accent-soft: rgba(0, 103, 192, 0.09);
+  --accent-soft-hover: rgba(0, 103, 192, 0.15);
+
+  --success: #0f7b0f;
+  --success-soft: rgba(15, 123, 15, 0.1);
+  --warning: #9d5d00;
+  --warning-soft: rgba(157, 93, 0, 0.12);
+  --danger: #c42b1c;
+  --danger-hover: #a82318;
+  --danger-soft: rgba(196, 43, 28, 0.1);
+  --danger-fill: #c42b1c;
+  --danger-fill-hover: #a82318;
+  --danger-fill-pressed: #8f1d0b;
+
+  --shadow-card: 0 1px 1px rgba(15, 23, 42, 0.04), 0 2px 8px rgba(15, 23, 42, 0.05);
+  --shadow-card-hover: 0 2px 4px rgba(15, 23, 42, 0.06), 0 8px 20px rgba(15, 23, 42, 0.08);
+  --shadow-flyout: 0 12px 36px rgba(15, 23, 42, 0.16), 0 2px 6px rgba(15, 23, 42, 0.07);
+  --shadow-control: 0 1px 0 rgba(15, 23, 42, 0.02);
+  --shadow-raised: 0 1px 2px rgba(15, 23, 42, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+
+  --mica-tint: linear-gradient(158deg, rgba(0, 103, 192, 0.04), rgba(0, 103, 192, 0) 46%),
+               radial-gradient(120% 90% at 96% -12%, rgba(120, 140, 255, 0.045), rgba(120, 140, 255, 0) 62%);
+  --overlay-scrim: rgba(15, 23, 42, 0.32);
+
+  --scrollbar-thumb: rgba(15, 23, 42, 0.22);
+  --scrollbar-thumb-hover: rgba(15, 23, 42, 0.4);
+
+  --skeleton-base: rgba(15, 23, 42, 0.06);
+  --skeleton-shine: rgba(255, 255, 255, 0.9);
+
+  --select-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 6.25 8 10.25 12 6.25' fill='none' stroke='%2364748b' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+
+  --titlebar-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  --pagebar-bg: transparent;
+}
+
+/* 主题切换瞬间关闭过渡，避免大面积颜色渐变导致的闪烁（core.js 会短暂加上该类） */
+html.kc-no-transition,
+html.kc-no-transition *,
+html.kc-no-transition *::before,
+html.kc-no-transition *::after {
+  transition: none !important;
+  animation-duration: 0s !important;
+}

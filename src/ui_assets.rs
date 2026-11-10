@@ -1,0 +1,23 @@
+// 自动生成：内嵌 UI 资源（勿手改）
+pub static FILES: &[(&str, &[u8])] = &[
+    ("assets/logo.svg", include_bytes!("../ui/assets/logo.svg")),
+    ("css/base.css", include_bytes!("../ui/css/base.css")),
+    ("css/components.css", include_bytes!("../ui/css/components.css")),
+    ("css/tokens.css", include_bytes!("../ui/css/tokens.css")),
+    ("css/views.css", include_bytes!("../ui/css/views.css")),
+    ("index.html", include_bytes!("../ui/index.html")),
+    ("js/bridge.js", include_bytes!("../ui/js/bridge.js")),
+    ("js/core.js", include_bytes!("../ui/js/core.js")),
+    ("js/main.js", include_bytes!("../ui/js/main.js")),
+    ("js/mock-host.js", include_bytes!("../ui/js/mock-host.js")),
+    ("js/pages.js", include_bytes!("../ui/js/pages.js")),
+    ("js/state.js", include_bytes!("../ui/js/state.js")),
+    ("js/titlebar.js", include_bytes!("../ui/js/titlebar.js")),
+    ("js/views/about.js", include_bytes!("../ui/js/views/about.js")),
+    ("js/views/click-form.js", include_bytes!("../ui/js/views/click-form.js")),
+    ("js/views/sequence-editor.js", include_bytes!("../ui/js/views/sequence-editor.js")),
+    ("js/views/settings.js", include_bytes!("../ui/js/views/settings.js")),
+    ("js/views/task-list.js", include_bytes!("../ui/js/views/task-list.js")),
+    ("js/views/timer-form.js", include_bytes!("../ui/js/views/timer-form.js")),
+    ("js/views/window-match.js", include_bytes!("../ui/js/views/window-match.js")),
+];
