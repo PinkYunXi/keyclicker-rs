@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark light">
+  <title>KeyClicker</title>
+
+  <!-- 首屏前恢复上次主题，避免闪白（core.js 之后接管） -->
+  <script>
+    (function () {
+      try {
+        var saved = window.localStorage.getItem('kc.theme');
+        if (saved === 'light' || saved === 'dark') {
+          document.documentElement.setAttribute('data-theme', saved);
+        }
+      } catch (err) { /* file:// 等环境忽略 */ }
+    })();
+  </script>
+
+  <!-- 样式：全部相对路径，供 https://kc.local/index.html 虚拟主机加载 -->
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/views.css" onerror="this.remove()">
+</head>
+<body>
+  <!-- 自绘标题栏（拖动区见 base.css / components.css） -->
+  <div id="titlebar">
+    <div class="tb-brand">
+      <img class="tb-logo" src="assets/logo.svg" alt="" draggable="false">
+      <span class="tb-title">KeyClicker</span>
+    </div>
+    <div class="tb-actions"></div>
+    <div class="tb-window">
+      <button id="btn-min" class="win-btn" type="button" title="最小化" aria-label="最小化"></button>
+      <button id="btn-max" class="win-btn" type="button" title="最大化" aria-label="最大化" style="display:none"></button>
+      <button id="btn-close" class="win-btn win-btn-close" type="button" title="关闭" aria-label="关闭"></button>
+    </div>
+  </div>
+
+  <!-- 配置页标签栏（pages.js 渲染） -->
+  <div id="pagebar"></div>
+
+  <!-- 主视图（ui-tasks 渲染；启动骨架在真实内容出现后自动移除） -->
+  <main id="view">
+    <div class="boot-view" id="boot-view" aria-busy="true" aria-label="正在加载">
+      <section class="card">
+        <div class="card-header">
+          <span class="skeleton title"></span>
+        </div>
+        <div class="card-body">
+          <span class="skeleton text"></span>
+          <span class="skeleton text"></span>
+          <span class="skeleton block"></span>
+        </div>
+      </section>
+      <section class="card">
+        <div class="card-header">
+          <span class="skeleton title"></span>
+        </div>
+        <div class="card-body">
+          <span class="skeleton text"></span>
+          <span class="skeleton block"></span>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer id="statusbar">
+    <span id="status-left"></span>
+    <span id="status-right"></span>
+  </footer>
+
+  <div id="toasts" aria-live="polite" aria-atomic="false"></div>
+  <div id="overlay-root"></div>
+
+  <!-- 脚本顺序固定（契约 §3 / UI_CONTRACT.md）：缺失文件由 onerror 吞掉 -->
+  <script src="js/core.js" onerror="this.dataset.loadError='1'"></script>
+  <script src="js/titlebar.js" onerror="this.dataset.loadError='1'"></script>
+  <script src="js/pages.js" onerror="this.dataset.loadError='1'"></script>
+  <script src="js/bridge.js" onerror="this.dataset.loadError='1'"></script>
+  <script src="js/state.js" onerror="this.dataset.loadError='1'"></script>
+  <script src="js/views/click-form.js" onerror="this.dataset.loadError='1'"></script>
+  <script src="js/views/timer-form.js" onerror="this.dataset.loadError='1'"></script>
+  <script src="js/views/task-list.js" onerror="this.dataset.loadError='1'"></script>
+  <script src="js/views/sequence-editor.js" onerror="this.dataset.loadError='1'"></script>
+  <script src="js/views/window-match.js" onerror="this.dataset.loadError='1'"></script>
+  <script src="js/views/about.js" onerror="this.dataset.loadError='1'"></script>
+<script src="js/views/settings.js" onerror="this.dataset.loadError='1'"></script>
+  <script src="js/main.js" onerror="this.dataset.loadError='1'"></script>
+  <script src="js/mock-host.js" onerror="this.dataset.loadError='1'"></script>
+</body>
+</html>

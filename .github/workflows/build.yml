@@ -1,0 +1,61 @@
+name: build
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 安装 Rust（MSVC）
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - name: 缓存 cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: cargo-${{ hashFiles('Cargo.lock') }}
+
+      - name: 生成内嵌 UI 资源
+        run: python tools/gen_ui_assets.py
+
+      - name: 编译 release
+        run: cargo build --release
+
+      - name: 验证产物
+        run: |
+          Get-Item target/release/keyclicker-rs.exe | Select-Object Name, Length
+          python -c "import struct;d=open('target/release/keyclicker-rs.exe','rb').read();e=struct.unpack_from('<I',d,0x3C)[0];print('subsystem',struct.unpack_from('<H',d,e+24+68)[0])"
+
+      - name: 生成带版本号的产物名
+        id: rename
+        shell: pwsh
+        run: |
+          $tag = ("$env:GITHUB_REF" -replace '^refs/tags/', '') -replace '^v', ''
+          if (-not $tag) { $tag = 'dev' }
+          $name = "KeyClicker-$tag-x64.exe"
+          Copy-Item target/release/keyclicker-rs.exe $name
+          "artifact=$name" >> $env:GITHUB_OUTPUT
+          Write-Output "artifact name: $name"
+
+      - name: 上传构建产物（仅 artifact，不发布）
+        id: upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.rename.outputs.artifact }}
+          path: ${{ steps.rename.outputs.artifact }}
+
+      # Release 由 tools/release.py 统一发布，CI 不再自动上传，
+      # 否则会出现「手工上传」和「CI 上传」两份同名产物。
